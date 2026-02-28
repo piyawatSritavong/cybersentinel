@@ -10,7 +10,7 @@ CyberSentinel คือแพลตฟอร์มความปลอดภั
 ติดตั้งและรันระบบทั้งหมด (Backend + Dashboard + Database) ภายในคำสั่งเดียว รองรับทั้ง **Linux** และ **macOS**
 
 ```bash
-curl -fsSL [https://raw.githubusercontent.com/piyawatSritavong/cybersentinel/main/setup.sh](https://raw.githubusercontent.com/piyawatSritavong/cybersentinel/main/setup.sh) | bash
+curl -fsSL https://raw.githubusercontent.com/piyawatSritavong/cybersentinel/main/setup.sh | bash
 
 ```
 
@@ -43,7 +43,7 @@ curl -fsSL [https://raw.githubusercontent.com/piyawatSritavong/cybersentinel/mai
 
 1. **Clone the repository:**
 ```bash
-git clone [https://github.com/piyawatSritavong/cybersentinel.git](https://github.com/piyawatSritavong/cybersentinel.git)
+git clone https://github.com/piyawatSritavong/cybersentinel.git
 cd cybersentinel
 
 ```
