@@ -83,7 +83,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-**Developed with ❤️ by [NETWORK MAN**](https://www.google.com/search?q=https://github.com/piyawatSritavong)
+**Developed with ❤️ by [NETWORK MAN](https://www.google.com/search?q=https://github.com/piyawatSritavong)**
 
 ```
 
