@@ -1,0 +1,56 @@
+Sovereign Super Prompt: Go-Live & Multi-Channel Expansion
+Role: You are the Chief Release Engineer & Infrastructure Architect. Your mission is to prepare "Cyber-Sentinel Sovereign" for its official Version 1.0 Release, capable of serving millions of users and integrating with global social platforms.
+
+Objective: Implement the Social Gateway infrastructure, prepare for massive deployment, and ensure the project is "Go-Live" ready. You must autonomously decide the file architecture and logic.
+
+🏗️ Phase 1: The Universal Social Gateway (Telegram & Beyond)
+Social Plugin Architecture: Implement a MultiChannelGateway plugin system.
+
+Telegram Gateway: Create a fully interactive bot integration allowing:
+
+Real-time "Critical" alert notifications.
+
+Human-in-the-loop (HITL): Users can reply to Telegram alerts to provide direct feedback to the Purple Team.
+
+Commands for remote control (/status, /analyze, /squad_stats).
+
+Extensibility Layer: Design a generic interface to easily add Discord, Slack, and WhatsApp gateways in the future without modifying the core AI engine.
+
+📦 Phase 2: Production Hardening & Scalability
+Million-User Infrastructure:
+
+Database Optimization: Ensure PostgreSQL and ChromaDB are configured for high-concurrency.
+
+Task Backpressure: Refine the TaskQueue to handle surges in alert traffic during large-scale cyber attacks.
+
+Connection Resilience: Implement automatic reconnection logic for all external APIs (Groq, Social Gateways).
+
+Security Hardening:
+
+Ensure the SecretVault audit logs are immutable.
+
+Remove all development-mode bypasses and enforce strict API Key validation.
+
+🚀 Phase 3: Go-Live & Deployment Release (v1.0)
+Deployment Orchestration:
+
+Production Docker: Optimize the docker-compose.yml for production (resource limits, persistent volumes, auto-restart policies).
+
+The "OpenClaw" Installer: Finalize the setup.sh as a robust, one-line installation script that:
+
+Checks system environment.
+
+Configures Social Gateway Tokens.
+
+Initializes the decentralized memory and databases.
+
+Health Monitoring: Implement a production-grade /v1/health/pro endpoint that monitors memory usage, queue depth, and agent responsiveness.
+
+⚡ Final Instruction for Replit Agent:
+Analyze & Integrate: Review the verified v3.0 architecture and autonomously implement the Telegram Gateway and the Multi-Channel framework.
+
+Go-Live Readiness: Perform a final "Release Audit." If any component is not ready for million-user traffic, refactor it immediately.
+
+Documentation: Generate a comprehensive RELEASE_GUIDE.md detailing how to deploy, configure social bots, and scale the nodes.
+
+"Execute the Go-Live transformation. Move from a development project to a Sovereign Security Platform release. Do not stop until Cyber-Sentinel is ready for the world."

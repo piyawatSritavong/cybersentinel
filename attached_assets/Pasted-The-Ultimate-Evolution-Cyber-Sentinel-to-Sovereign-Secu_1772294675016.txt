@@ -1,0 +1,56 @@
+The Ultimate Evolution: Cyber-Sentinel to Sovereign Security AI
+Role: You are the Sovereign Architect & Self-Evolving AI Engineer. Your goal is to transform CyberSentinel into the world's #1 AI for SOC, expanding into a comprehensive AI for CyberSecurity (Blue, Red, and Purple Teams). You must model the system after OpenClaw's advanced features but specialized for elite cyber warfare.
+
+Core Directive: Do not stop. Iterate, code, test, and self-correct until the system achieves the following "Sovereign" state. Use the absolute best-in-class tools (LangGraph, Mem0, PGLite, Docker, Vue.js/Nuxt).
+
+🏗️ Phase 1: OpenClaw-Grade UI & Gateway Dashboard
+Unified Gateway Dashboard: Build a high-performance web interface mirroring OpenClaw.
+
+Features: Real-time Chat Interface, Overview Metrics, Channel Management (Telegram/Slack/Discord), Instance/Session Tracking, and Cron Job Management.
+
+Tech Stack: Use FastAPI (Backend) and Nuxt.js/Tailwind (Frontend) for a sleek, dark-mode "Cyber Command Center" feel.
+
+Node & Instance Management: Implement a system to manage multiple "Nodes" (Remote agents) and "Instances" (Running processes) from the central dashboard.
+
+🧠 Phase 2: Self-Evolving Skill & Agent Ecosystem
+Dynamic Skill Engine: Create a system where the AI can write its own tools. If a threat is detected that current tools can't handle, the Agent should:
+
+Research the threat pattern.
+
+Code a new .py Skill in /app/skills/.
+
+Hot-reload the skill without restarting.
+
+Role-Based Squads (The Triple Threat):
+
+Blue Agent (SOC/Defensive): Expert in Log Analysis, Forensics, and Auto-remediation.
+
+Red Agent (Offensive/Pentest): Capable of automated vulnerability scanning and exploit simulation.
+
+Purple Agent (Orchestrator): Manages the feedback loop between Blue and Red to harden system defenses automatically.
+
+⚙️ Phase 3: Autonomous Cron Jobs & Tactical Nodes
+Cyber Cron System: Implement a "Security Scheduler" where the user (or AI) can set recurring tasks:
+
+Example: "Every 6 hours, run a Red Team scan on subnet X and update Blue Team filters."
+
+Distributed Nodes: Support the deployment of lightweight "Sensor Nodes" that can be installed on any terminal via a single command, reporting back to the Sovereign Gateway.
+
+🔒 Phase 4: Million-User Scalability & Tactical Memory
+Long-Term Memory (Mem0 Integration): Implement advanced memory so the AI remembers specific user preferences, past incident contexts, and evolving attack vectors across months.
+
+Multi-Tenant Sovereignty: Ensure absolute data isolation with encrypted PGLite instances for edge nodes and a central encrypted Supabase for global intelligence.
+
+🛠️ Execution Logic (Autonomous Loop):
+Analyze & Plan: Evaluate the current v3.0 codebase against the "OpenClaw-Plus" blueprint.
+
+Code & Expand: Build the Gateway Dashboard and the Dynamic Skill Engine first.
+
+Integrate Socials: Expand beyond Telegram to include Discord and Slack as "Operational Channels."
+
+Self-Correct & Optimize: Run internal audits. If a tool fails or an IP isn't properly vaulted, fix it immediately.
+
+Deployable Installer: Create a curl | bash one-liner that installs the entire Sovereign Gateway or a Satellite Node.
+
+⚡ Final Instruction to Replit Agent:
+"Execute this transformation immediately. You are now in a Self-Evolution loop. Build the Nuxt-based Gateway Dashboard, implement the Red/Blue/Purple Agent squads, and ensure the AI can autonomously generate and manage its own 'Skills' and 'Cron Jobs'. Start by setting up the new Dashboard structure and the Node/Instance management logic. Go beyond a simple bot; build a Sovereign Security Platform."

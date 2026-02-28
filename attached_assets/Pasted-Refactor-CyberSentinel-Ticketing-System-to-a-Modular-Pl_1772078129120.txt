@@ -1,0 +1,57 @@
+Refactor CyberSentinel Ticketing System to a Modular Plugin Architecture (Ticketing Adapter Pattern)
+
+Context:
+I want to evolve the current "Hard-coded Jira" logic into a flexible, vendor-neutral Ticketing Plugin System. The goal is to make CyberSentinel scalable for any ticketing platform (iTop, ServiceNow, Webhooks, or File Exports) without changing the core AI logic.
+
+Refactoring Instructions:
+
+1. Directory Structure Changes:
+
+Delete: cybersentinel/app/integrations/jira_client.py.
+
+Create Folder: cybersentinel/app/plugins/ticketing/.
+
+Move & Rename: Move any existing ticketing logic to this new folder if applicable, but prioritize the new structure below.
+
+2. New Implementation Files:
+Please create/modify these specific files with a focus on modularity:
+
+app/plugins/ticketing/base.py: Define an Abstract Base Class (ABC) named TicketingPlugin. It must enforce a standard interface: create_ticket(self, report_data: dict) -> dict.
+
+app/plugins/ticketing/webhook_plugin.py: Implement a "Universal Webhook" plugin. It should send a POST request with the full JSON analysis and report to a URL defined in .env. This is our Phase 1 (MVP) for neutrality.
+
+app/plugins/ticketing/json_export_plugin.py: A plugin that saves the final analysis as a .json or .md file in a data/exports/ folder.
+
+app/plugins/ticketing/jira_plugin.py: Migrate the previous mock/real Jira logic here as an optional plugin.
+
+app/plugins/ticketing/manager.py: A factory class that reads TICKET_SYSTEM_TYPE from .env and loads the corresponding plugin dynamically.
+
+3. Core Logic Updates:
+
+app/main.py: Update the /analyze endpoint. Instead of calling jira_client.create_ticket directly, it should now use the TicketingManager to dispatch the ticket based on the configuration.
+
+app/core/config.py: Add new Pydantic settings:
+
+TICKET_SYSTEM_TYPE: (e.g., 'webhook', 'jira', 'json') - Default to 'webhook'.
+
+TICKET_WEBHOOK_URL: For the universal webhook.
+
+TICKET_EXPORT_PATH: Default to data/exports/.
+
+4. Why we are doing this (Context for AI):
+
+Neutrality: We don't want to force users into Jira. Every SOC uses different tools.
+
+Scalability: We want a "Plug & Play" system where adding itop_plugin.py in the future requires zero changes to the main.py or AI Agents.
+
+Data Sovereignty: Local JSON/File exports are safer for some air-gapped environments.
+
+5. Implementation Constraints:
+
+Ensure Backward Compatibility: If no .env keys are found, default to the "Webhook" plugin with a "Mock Mode" log.
+
+Keep the PII Masking intact: The data sent to the ticketing system must be the masked version.
+
+Maintain the high-quality comments for security professionals as per the original prompt.
+
+Go ahead and refactor the system now.

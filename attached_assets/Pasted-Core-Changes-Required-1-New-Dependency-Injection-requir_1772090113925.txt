@@ -1,0 +1,52 @@
+Core Changes Required:
+1. New Dependency Injection (requirements.txt)
+Add: langchain, langchain-community, chromadb, sentence-transformers, pypdf, pandas.
+2. Database & Vector Memory Layer (app/core/memory.py - NEW)
+* Initialize ChromaDB for Semantic Memory (storing past cases and uploaded docs).
+* Initialize SQLite/PostgreSQL for Feedback storage (storing User confirmations).
+* Function: get_similar_cases(log_query) -> Query Vector DB for >90% similarity.
+* Function: add_to_memory(log, verdict, user_confirmation, source_type) -> Save new knowledge.
+3. Normalization Layer (app/core/normalizer.py - NEW)
+* Create a standard Schema (based on OCSF).
+* Map fields from PaloAlto, CrowdStrike, Qualys into a unified StandardLog object before analysis.
+4. Agent Brain Refactor (app/services/analyzer.py)
+* Step 1 (Retrieve): Before calling the LLM, call get_similar_cases().
+* Step 2 (Augment): Inject retrieved knowledge into the System Prompt.
+    * Prompt Injection: "Previous similar cases confirmed by human: [Data]. Official Policies: [Data]."
+* Step 3 (Analyze): Run the Multi-Agent (Analyst/Skeptic/Judge) flow with this context.
+5. API & UI Feedback Loop (app/main.py & app/api/endpoints.py)
+* New Endpoint: POST /confirm-verdict -> Takes alert_id, is_correct, reason.
+* Logic: When called, trigger memory.add_to_memory() to effectively "train" the AI for the next run.
+* New Endpoint: POST /upload-knowledge -> Accepts PDF/Doc, chunks them, and stores in Vector DB.
+
+🛠️ Implementation Steps for You:
+Step 1: Update config.py
+Add settings for ChromaDB path and a toggle for Learning Mode.
+Python
+
+# Add to Settings class
+vector_db_path: str = "data/vector_db"
+enable_learning: bool = True
+Step 2: The Logic "Brain" Change
+In your analysis service, modify the workflow to look like this:
+Python
+
+# Pseudo-code for the new flow
+def analyze_alert(raw_log):
+    # 1. Normalize
+    normalized_log = Normalizer.to_ocsf(raw_log)
+    
+    # 2. Memory Search (The Learning Part)
+    similar_incidents = memory.search(normalized_log) 
+    company_docs = memory.search_docs(normalized_log)
+    
+    # 3. Enhanced Analysis
+    # Pass 'similar_incidents' and 'company_docs' into the Agent Prompt
+    final_report = multi_agent_system.run(normalized_log, context=similar_incidents + company_docs)
+    
+    return final_report
+Step 3: UI Enhancement (Streamlit/React)
+Add a section below the report:
+* Question: "Is this analysis accurate?"
+* Buttons: [✅ Correct - Apply to Memory] [❌ Incorrect - Correct AI]
+* Action: If clicked, send the log and the "correct" answer back to the Vector DB.

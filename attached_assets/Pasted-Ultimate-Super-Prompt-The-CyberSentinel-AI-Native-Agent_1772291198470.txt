@@ -1,0 +1,91 @@
+Ultimate Super Prompt: The CyberSentinel "AI-Native Agentic" Transformation
+Role: You are the Lead AI Systems Architect & Core Developer. Your mission is to refactor "CyberSentinel" from a basic FastAPI app into a world-class, scalable, AI-Native Agentic System that mirrors the success of OpenClaw but specializes in Cyber Security.
+
+Objective: Implement a fully autonomous, tool-enabled, multi-tenant agentic system with a decentralized data approach and a social-integrated UI (Telegram/Discord/Web Console).
+
+🏗️ Phase 1: The "OpenClaw-Style" Infrastructure & Decentralized Data
+Multi-Tenant Session Manager:
+
+Refactor app/core/memory.py to use a TenantContext. Every database operation must be scoped by user_id or org_id.
+
+Implement Hybrid Storage:
+
+Local/Edge Layer: Use DuckDB for fast, local analytical caching of recent alerts per user.
+
+Cloud Layer: Use Supabase (PostgreSQL) for persistent global metadata and ChromaDB/Pinecone for "Cross-Incident Experience" (Vector Memory).
+
+SecretVault & Forensic Integrity:
+
+Create app/core/security.py with a SecretVault class.
+
+Logic: Encrypt PII (like SRC_IP) using AES-256 before storing in DB. Generate a Forensic_ID (Token).
+
+Agent Interaction: The Agent only sees the Forensic_ID or masked data. It must explicitly call reveal_secret(token) tool if it justifies a high-risk investigation (Audited Action).
+
+🧠 Phase 2: The Agentic Reasoning Engine (ReAct Framework)
+Autonomous Supervisor:
+
+Create app/core/engine.py. Replace hardcoded logic with a LangGraph-style state machine.
+
+The Supervisor Agent will use Groq (Llama 3.3 70B) as the primary brain, with a fallback to Ollama (local) or OpenRouter if 429 errors occur (Exponential Backoff implemented).
+
+Skill-Based Tooling (Atomic Tools):
+
+Transform all backend logic into decorated tools in app/tools/.
+
+Core Tools to Implement:
+
+HistoryAnalyst: Queries Vector DB for similar attack patterns.
+
+ThreatIntelLookup: Connects to external APIs (VirusTotal/AbuseIPDB).
+
+ResponseExecutor: Can trigger mock firewall blocks or isolate "Forensic Tokens".
+
+MemoryConsolidator: Summarizes the case and saves "Lessons Learned" back to Vector Memory.
+
+🔌 Phase 3: Plugin Architecture & Scalable Ingestion
+Dynamic Plugin System:
+
+Create a /plugins directory. Implement a BasePlugin interface using importlib.
+
+Enable Zero-Config Loading: Any .py file in /plugins (e.g., telegram_bot.py, slack_notif.py) must be automatically registered as an "Output Skill" or "Input Source".
+
+Asynchronous Task Queue:
+
+Implement TaskIQ or Celery with Redis.
+
+POST /v1/ingest must only validate the API key and push the alert to the queue, returning a task_id immediately. The Agent works in the background to ensure "Million-User" scalability.
+
+🖥️ Phase 4: UI/UX & Installation (The OpenClaw Mirror)
+OpenClaw-Style Interface:
+
+Social UI: Implement a Telegram Bot as the primary Command Center. Users should be able to type /status, /analyze <alert_id>, or receive real-time "Human-in-the-loop" prompts.
+
+Terminal UI (Web): Create a lightweight Streamlit or FastAPI-based Dashboard that shows a "Live Reasoning Stream" (What the AI is thinking right now).
+
+Deployment & Portability:
+
+Create a docker-compose.yml that bundles the Agent, Redis, DuckDB, and the Web UI.
+
+Implement a setup.sh that mimics OpenClaw’s "One-Line Install" (checks dependencies, sets up .env, and initializes Vector DB).
+
+🛠️ Step-by-Step Execution Plan for Replit Agent:
+Step 1 (The Core): Refactor memory.py to support TenantContext and encrypted storage.
+
+Step 2 (The Brain): Build the AgentSupervisor in engine.py using a ReAct loop.
+
+Step 3 (The Skills): Convert current analysis logic into a Toolbox that the Agent can call.
+
+Step 4 (The Queue): Setup Redis and an async worker to handle alerts.
+
+Step 5 (The Interface): Add the Telegram Bot plugin as the main interaction point.
+
+Step 6 (The Wrap): Create the install script and Docker config for easy distribution.
+
+Constraints: - Use Pydantic v2 for all data schemas.
+
+Ensure Asyncio is used throughout for high concurrency.
+
+Use SynthID/Logging for all AI actions to ensure "Explainable AI".
+
+Final Instruction: "Proceed with the refactor. Start with the Multi-Tenant Memory Layer and the SecretVault. Do not stop until CyberSentinel is a fully autonomous agentic system."

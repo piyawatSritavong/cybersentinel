@@ -1,0 +1,62 @@
+modules = ["nodejs-20", "python-3.11", "web", "postgresql-16"]
+run = "npm run dev"
+hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
+
+[nix]
+channel = "stable-24_05"
+packages = ["cargo", "clipboard-jh", "gmp", "libffi", "libiconv", "libxcrypt", "openssl", "pkg-config", "rustc", "sqlite"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 8000
+externalPort = 8000
+
+[[ports]]
+localPort = 8001
+externalPort = 4200
+
+[[ports]]
+localPort = 8002
+externalPort = 3001
+
+[[ports]]
+localPort = 8020
+externalPort = 3000
+
+[env]
+PORT = "5000"
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["node", "./dist/index.cjs"]
+build = ["npm", "run", "build"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[userenv]
+
+[userenv.shared]
+ENABLE_SOCIAL_GATEWAY = "true"
+TELEGRAM_BOT_TOKEN = "8778632229:AAFxxog-33fXgKDlv-4JjxEMXzamKej_uEw"

@@ -1,0 +1,46 @@
+Role: You are the Principal Cloud Architect & Security Engineer. Your mission is to migrate the entire Cyber-Sentinel infrastructure from external services to Replit-Managed services while ensuring zero vendor lock-in for the core AI logic.
+
+Objective: Fully integrate Replit-native tools, clean up legacy Supabase credentials, and implement an Adapter Pattern for future AWS migration.
+
+🛠️ Step 1: Database & Storage Migration (The Big Shift)
+Replit Managed DB: * Migrate all logic from Supabase to the Replit Managed PostgreSQL (20GB).
+
+Action: Deep-clean the codebase. Delete all Supabase Secret Keys, API URLs, and legacy client initializations. Ensure the system only uses DATABASE_URL from Replit.
+
+Replit App Storage: * Replace any local or external file storage with Replit App Storage for logs, reports, and persistent data.
+
+The Adapter Layer (Crucial): * Create a file named cybersentinel/config/infra_adapter.py.
+
+Implement a Dependency Injection pattern. The core system must call Infra.db_execute() or Infra.save_file() instead of direct library calls.
+
+Prepare a settings.yaml or config.py as the Single Source of Truth. If I change PROVIDER from REPLIT to AWS, the system must switch to S3 and RDS automatically.
+
+🛡️ Step 2: Security & Production Hardening
+Security Scanner Integration:
+
+Run the Replit Security Scanner autonomously. Identify vulnerabilities in dependencies and the FastAPI/Express bridge. Fix them immediately.
+
+Production Workflows: * Configure Workflows to ensure the API and Dashboard auto-restart and maintain high availability.
+
+VNC for Red Team: * Enable and configure VNC support for the Red Team Agent to allow GUI-based exploit simulations (if needed).
+
+🧠 Step 3: AI Evolution & Automation
+Agent Skills & Automations: * Link the Agent Skills tool to the Purple Team's skill-generation engine.
+
+Setup Automations to trigger the "Analyze -> Generate Skill -> Deploy Patch" loop without manual command input.
+
+🚫 Constraints:
+NO Replit Auth: Do not implement Replit Auth. The system is for local server deployment; access control is handled by the pre-download portal.
+
+⚡ Execution Directive for Replit Agent:
+Audit & Delete: Find every instance of "Supabase" and purge it.
+
+Architectural Refactor: Build the InfraAdapter first to ensure the migration is clean.
+
+Deploy Native: Move data to PostgreSQL and files to App Storage.
+
+Verification: Run the 102+ test suite. All tests must pass using the new Replit-Native infra.
+
+Documentation: Update RELEASE_GUIDE.md to explain how to switch the Adapter to AWS in the future.
+
+"Begin the migration to Sovereign Replit-Native architecture. Make it fast, make it secure, and make it portable."

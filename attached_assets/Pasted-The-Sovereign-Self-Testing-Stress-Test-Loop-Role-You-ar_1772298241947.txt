@@ -1,0 +1,79 @@
+The Sovereign Self-Testing & Stress-Test Loop
+Role: You are the Lead Quality Assurance Engineer & Red/Blue/Purple Team Auditor. Your mission is to perform a 100% comprehensive, end-to-end (E2E) validation of the Cyber-Sentinel Sovereign Platform.
+
+Objective: Test every single flow, use case, and edge case within the system. You must prove—with logs and evidence—that the platform can handle real-world cyber warfare scenarios autonomously.
+
+🏗️ Phase 1: Infrastructure & Multi-Tenancy Integrity
+Vault & Encryption Test:
+
+Ingest data with real PII (IPs, Emails).
+
+Verify that SecretVault encrypts it and only returns FTKN-xxxx to the Agent.
+
+Verify that org_id isolation works (User A cannot see User B's alerts even with the same alert_id).
+
+Concurrency & Queue Backpressure:
+
+Flood the /v1/ingest endpoint with 50+ simultaneous requests.
+
+Verify the Async Task Queue handles them, shows PENDING, and processes them without crashing.
+
+Verify the REJECTED status triggers when the queue is full.
+
+⚔️ Phase 2: The Triple-Threat Squad Simulation (Squad Testing)
+Blue Team (Defensive) Flow:
+
+Inject a "Brute Force" alert.
+
+Verify the Blue Agent correlates it with history, assigns a risk score, and proposes a remediation.
+
+Red Team (Offensive) Flow:
+
+Trigger a "Vulnerability Scan" task via the Dashboard.
+
+Verify the Red Agent generates a simulated exploit report and identifies "weak points."
+
+Purple Team (Orchestrator) Feedback Loop:
+
+Feed the Red Team's findings back to the Purple Agent.
+
+The Ultimate Test: Verify the Purple Agent automatically triggers the Dynamic Skill Engine to write a new defensive skill to mitigate the vulnerability identified by the Red Team.
+
+🧠 Phase 3: AI Self-Evolution & Skill Validation
+Dynamic Skill Hot-Loading:
+
+Ask the AI to generate a brand-new skill (e.g., "Analyze Log4j specific patterns").
+
+Verify the code is written to /app/skills/, loaded into memory, and immediately usable in the next analysis without a server restart.
+
+Cron Job Autonomy:
+
+Create a Cron Job to run a health check every 1 minute.
+
+Verify the scheduler triggers the task and logs the result in the Dashboard.
+
+🖥️ Phase 4: UI/UX & Gateway Connectivity
+Express-FastAPI Proxy Test:
+
+Verify that the Frontend displays "Online" when FastAPI is up and "Degraded/Fallback" when it's down.
+
+Terminal Command Test:
+
+Run /status, /analyze, and /scan via the Terminal UI.
+
+Verify the response matches the Agent Engine's output.
+
+⚡ Execution Instructions for Replit Agent:
+Autonomous Testing: Create a temporary test_suite.py that executes these flows.
+
+No Manual Intervention: If a test fails, Self-Correct the code immediately and re-run the test.
+
+Final Report: Provide a summary in the chat:
+
+[PASS/FAIL] for each Phase.
+
+Evidence of the Purple Team's successful "Detect -> Exploit -> Patch" loop.
+
+Confirmation that setup.sh successfully installs the system from scratch.
+
+"Begin the Ultimate Validation Loop now. Do not stop until the system is 100% verified as a Sovereign Security AI."

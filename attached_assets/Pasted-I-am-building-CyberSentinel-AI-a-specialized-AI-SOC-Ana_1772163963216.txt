@@ -1,0 +1,51 @@
+I am building "CyberSentinel AI", a specialized AI SOC Analyst for SMEs. I have already performed some manual refactoring (switching to SQLAlchemy and Supabase). Your first task is to index and analyze all existing files to understand the current state, including app/core/config.py, app/core/memory.py, and app/core/database.py.
+
+1. Database Migration & Initialization:
+
+Complete the migration from SQLite to Supabase (PostgreSQL).
+
+Ensure that upon startup, the system checks if the necessary tables (especially feedback and incidents) exist. If not, automatically create them.
+
+Use database_url from the environment variables for the connection.
+
+2. Core Engine: Self-Learning & RAG (Retrieval-Augmented Generation):
+Transform this into a true Self-Learning AI:
+
+Recall Before Thinking: For every incoming log, the system must search the ChromaDB (Vector Memory) for similar past incidents and query Supabase for historical human decisions.
+
+Deduplication & Efficiency: If a log is highly similar to a previous case, the AI should prioritize the previous verdict to reduce redundant computation.
+
+SOP Integration: Create 3 sample SOP (Standard Operating Procedure) files in data/playbooks/ as Markdown (.md):
+
+low_severity.md: Handling Low alerts (e.g., Authorized scans) with examples.
+
+medium_severity.md: Handling Medium alerts (e.g., Multiple failed logins) with examples.
+
+high_severity.md: Handling High alerts (e.g., SQL Injection, Ransomware) with examples.
+
+The AI must analyze logs against both historical DB records and these .md SOPs.
+
+3. Advanced Cyber-Skills Implementation:
+Implement the following logic in the analyzer.py or a new service:
+
+Skill - Log Correlation: Ability to group logs from different sources (e.g., Splunk + CrowdStrike) to find a common attack pattern.
+
+Skill - Auto-Remediation Recommendation: Every report must include a "Remediation" section based on ISO 27001 or NIST standards.
+
+4. Feedback Loop (RLHF):
+
+Ensure the /confirm-verdict endpoint works perfectly. When a user clicks "Apply" or "Confirm", the system must:
+
+Update the PostgreSQL record.
+
+Embed the "Corrected Log + Verdict" into ChromaDB so the AI "learns" from this human intervention immediately.
+
+5. Product Vision & Architecture:
+
+Prepare the system to be a "Cloud-Native Hybrid" (SaaS or On-premise self-host) similar to OpenClaw.
+
+Optimize the API structure to support a future Dashboard with Live Process Bars (showing Retrieve -> Correlate -> Analyze -> Recommend).
+
+Focus: We are positioning CyberSentinel as the #1 Specialized AI SOC for the SME market. Avoid generic responses; prioritize deep forensic reasoning.
+
+Please review the files now and implement these changes step-by-step. Start by verifying the Supabase connection and table creation.

@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  cybersentinel:
+    build: .
+    container_name: cybersentinel_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/vector_db:/app/data/vector_db
+      - ./data/exports:/app/data/exports
+      - ./data/playbooks:/app/data/playbooks
+      - ./app/plugins:/app/app/plugins
+    env_file:
+      - .env
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
