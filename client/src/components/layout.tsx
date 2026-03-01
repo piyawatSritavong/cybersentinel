@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import {
   Shield, LayoutDashboard, AlertTriangle, Users, Wrench,
-  Clock, Activity, Terminal, Globe, ChevronLeft, ChevronRight
+  Clock, Activity, Terminal, Globe, ChevronLeft, ChevronRight, Settings
 } from "lucide-react";
 import { useState } from "react";
 
@@ -13,6 +13,7 @@ const navItems = [
   { path: "/cron", label: "Cron Jobs", icon: Clock },
   { path: "/nodes", label: "Nodes", icon: Activity },
   { path: "/gateways", label: "Gateways", icon: Globe },
+  { path: "/settings", label: "Settings", icon: Settings },
   { path: "/terminal", label: "Terminal", icon: Terminal },
 ];
 

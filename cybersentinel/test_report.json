@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-02-28T19:09:38Z",
+  "timestamp": "2026-03-01T06:50:34Z",
   "version": "1.0.0",
   "summary": {
-    "total": 102,
-    "passed": 102,
+    "total": 130,
+    "passed": 130,
     "failed": 0,
     "percentage": 100.0
   },
@@ -31,6 +31,10 @@
     "P6": {
       "pass": 18,
       "fail": 0
+    },
+    "P7": {
+      "pass": 28,
+      "fail": 0
     }
   },
   "results": [
@@ -38,19 +42,19 @@
       "phase": "P1",
       "test": "Vault stores IP and returns FTKN token",
       "status": "PASS",
-      "detail": "Token: FTKN-921ED62BDBEC"
+      "detail": "Token: FTKN-6F988C88C657"
     },
     {
       "phase": "P1",
       "test": "Vault stores email PII as FTKN token",
       "status": "PASS",
-      "detail": "Token: FTKN-49CAEF333A03"
+      "detail": "Token: FTKN-4F611DF3A3C1"
     },
     {
       "phase": "P1",
       "test": "Vault generates unique tokens per secret",
       "status": "PASS",
-      "detail": "Token: FTKN-874EFD8A9958"
+      "detail": "Token: FTKN-D3EFB2BBBCC9"
     },
     {
       "phase": "P1",
@@ -110,7 +114,7 @@
       "phase": "P1",
       "test": "Task IDs follow expected format",
       "status": "PASS",
-      "detail": "Sample: task-04cc62d8"
+      "detail": "Sample: task-b8dd44e3"
     },
     {
       "phase": "P1",
@@ -158,7 +162,7 @@
       "phase": "P2",
       "test": "Blue Team produced analysis (>100 chars)",
       "status": "PASS",
-      "detail": "Response: 3529 chars"
+      "detail": "Response: 3409 chars"
     },
     {
       "phase": "P2",
@@ -176,7 +180,7 @@
       "phase": "P2",
       "test": "Red Team produced exploit report (>100 chars)",
       "status": "PASS",
-      "detail": "Response: 3646 chars"
+      "detail": "Response: 3382 chars"
     },
     {
       "phase": "P2",
@@ -194,7 +198,7 @@
       "phase": "P2",
       "test": "Purple Team produced gap analysis (>100 chars)",
       "status": "PASS",
-      "detail": "Response: 4641 chars"
+      "detail": "Response: 4507 chars"
     },
     {
       "phase": "P2",
@@ -240,7 +244,7 @@
     },
     {
       "phase": "P3",
-      "test": "Skill file written to disk (1614 bytes)",
+      "test": "Skill file written to disk (1590 bytes)",
       "status": "PASS",
       "detail": "Path: /home/runner/workspace/cybersentinel/app/skills/log4j_detector.py"
     },
@@ -338,7 +342,7 @@
       "phase": "P4",
       "test": "Alerts list endpoint returns array",
       "status": "PASS",
-      "detail": "Alerts: 4"
+      "detail": "Alerts: 1"
     },
     {
       "phase": "P4",
@@ -356,13 +360,13 @@
       "phase": "P4",
       "test": "Create cron job via Express",
       "status": "PASS",
-      "detail": "ID: cron-144ac0ba"
+      "detail": "ID: cron-52be4d82"
     },
     {
       "phase": "P4",
       "test": "List cron jobs via Express",
       "status": "PASS",
-      "detail": "Jobs: 4"
+      "detail": "Jobs: 1"
     },
     {
       "phase": "P4",
@@ -645,6 +649,174 @@
       "test": "API key is non-empty in production config",
       "status": "PASS",
       "detail": "Key length: 23"
+    },
+    {
+      "phase": "P7",
+      "test": "DynamicSettings singleton initializes",
+      "status": "PASS",
+      "detail": "db_available: True"
+    },
+    {
+      "phase": "P7",
+      "test": "DynamicSettings is singleton",
+      "status": "PASS",
+      "detail": "Same instance returned"
+    },
+    {
+      "phase": "P7",
+      "test": "seed_from_env populates categories",
+      "status": "PASS",
+      "detail": "Categories: ['ai_models', 'social_gateways', 'integrations', 'security', 'system']"
+    },
+    {
+      "phase": "P7",
+      "test": "DynamicSettings set/get works",
+      "status": "PASS",
+      "detail": "Got: test_value"
+    },
+    {
+      "phase": "P7",
+      "test": "get_category returns items",
+      "status": "PASS",
+      "detail": "Items: {'secret_key': 'my-secret-value', 'test_key': 'test_value'}"
+    },
+    {
+      "phase": "P7",
+      "test": "is_enabled returns True for active setting",
+      "status": "PASS",
+      "detail": "Enabled by default"
+    },
+    {
+      "phase": "P7",
+      "test": "toggle disables setting",
+      "status": "PASS",
+      "detail": "Toggled off"
+    },
+    {
+      "phase": "P7",
+      "test": "Encrypted values masked in get_all_settings",
+      "status": "PASS",
+      "detail": "Masked value: {'value': '****', 'encrypted': True, 'enabled': True, 'description': ''}"
+    },
+    {
+      "phase": "P7",
+      "test": "Fallback default works for missing keys",
+      "status": "PASS",
+      "detail": "Got: fallback_default"
+    },
+    {
+      "phase": "P7",
+      "test": "list_providers returns 4 providers",
+      "status": "PASS",
+      "detail": "Count: 4"
+    },
+    {
+      "phase": "P7",
+      "test": "All provider names present",
+      "status": "PASS",
+      "detail": "Names: ['groq', 'openai', 'anthropic', 'ollama']"
+    },
+    {
+      "phase": "P7",
+      "test": "GroqProvider instantiates",
+      "status": "PASS",
+      "detail": "Type: GroqProvider"
+    },
+    {
+      "phase": "P7",
+      "test": "OpenAI stub doesn't crash",
+      "status": "PASS",
+      "detail": "Stub returns not_configured"
+    },
+    {
+      "phase": "P7",
+      "test": "IntegrationHub lists 6+ integrations",
+      "status": "PASS",
+      "detail": "Count: 6"
+    },
+    {
+      "phase": "P7",
+      "test": "All integration names present",
+      "status": "PASS",
+      "detail": "Names: ['splunk', 'jira', 'virustotal', 'clickup', 'notion', 'hybrid_analysis']"
+    },
+    {
+      "phase": "P7",
+      "test": "Stub integration test returns not configured",
+      "status": "PASS",
+      "detail": "Message: ClickUp not configured"
+    },
+    {
+      "phase": "P7",
+      "test": "IntegrationHub.get_status returns summary",
+      "status": "PASS",
+      "detail": "Total: 6, Configured: 1"
+    },
+    {
+      "phase": "P7",
+      "test": "list_social_connectors returns Line and WhatsApp",
+      "status": "PASS",
+      "detail": "Count: 2"
+    },
+    {
+      "phase": "P7",
+      "test": "Line and WhatsApp stubs exist",
+      "status": "PASS",
+      "detail": "Names: ['line', 'whatsapp']"
+    },
+    {
+      "phase": "P7",
+      "test": "Line stub is not configured",
+      "status": "PASS",
+      "detail": "Status: None"
+    },
+    {
+      "phase": "P7",
+      "test": "Whatsapp stub is not configured",
+      "status": "PASS",
+      "detail": "Status: None"
+    },
+    {
+      "phase": "P7",
+      "test": "GET /api/settings returns data",
+      "status": "PASS",
+      "detail": "Status: 200"
+    },
+    {
+      "phase": "P7",
+      "test": "GET /api/settings/onboarding returns state",
+      "status": "PASS",
+      "detail": "Completed: False"
+    },
+    {
+      "phase": "P7",
+      "test": "GET /api/providers/models returns list",
+      "status": "PASS",
+      "detail": "Count: 4"
+    },
+    {
+      "phase": "P7",
+      "test": "GET /api/providers/integrations returns list",
+      "status": "PASS",
+      "detail": "Count: 6"
+    },
+    {
+      "phase": "P7",
+      "test": "GET /api/providers/social returns connectors",
+      "status": "PASS",
+      "detail": "Count: 2"
+    },
+    {
+      "phase": "P7",
+      "test": "Missing API key doesn't crash (Anthropic stub)",
+      "status": "PASS",
+      "detail": "Gracefully returns not_configured"
+    },
+    {
+      "phase": "P7",
+      "test": "Missing integration key doesn't crash (Notion stub)",
+      "status": "PASS",
+      "detail": "Gracefully disabled"
     }
   ]
 }

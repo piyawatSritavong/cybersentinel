@@ -10,26 +10,26 @@
 # 1. Clone the repository
 git clone <repo-url> && cd cybersentinel
 
-# 2. Install dependencies
-pip install -r requirements.txt
-npm install
+# 2. Run the auto-healing setup
+chmod +x setup.sh && ./setup.sh
 
-# 3. Configure environment
-cp .env.example .env
-# Edit .env with your API keys
-
-# 4. Start the platform
+# 3. Start the platform
 npm run dev
+
+# 4. Open the Web UI and complete the onboarding wizard
+# No .env file required — configure everything from the browser
 ```
 
 ---
 
 ## Architecture Overview
 
-CyberSentinel AI is a dual-layer platform:
+CyberSentinel AI is a dual-layer platform with a plug-and-play modular architecture:
 
 - **Express Gateway** (port 5000): Serves the React Cyber Command Center and proxies API requests
 - **FastAPI AI Core** (port 8000): Runs the autonomous SOC engine with Blue/Red/Purple agent squads
+- **Dynamic Settings**: PostgreSQL-backed configuration engine (no .env editing required)
+- **Provider Pattern**: Modular adapters for AI models, integrations, and social connectors
 
 ```
                     Browser
@@ -39,41 +39,99 @@ CyberSentinel AI is a dual-layer platform:
     React UI    REST API    WebSocket
                   |
            FastAPI Core (:8000)
-          /    |    |    \
-     Agents  Queue  Vault  Gateways
-      |        |      |       |
-    Groq    Scheduler PBKDF2  Telegram/Discord/Slack
+          /    |    |    \       \
+     Agents  Queue  Vault  Gateways  DynamicSettings
+      |        |      |       |           |
+    Groq    Scheduler PBKDF2  Telegram  PostgreSQL
+                              Discord   (system_settings)
+                              Slack
+                              Line*
+                              WhatsApp*
 ```
+
+---
+
+## First-Run Setup (Web UI)
+
+CyberSentinel uses a **Web-first configuration** approach. No `.env` file is required.
+
+1. Start the platform with `npm run dev`
+2. Open the dashboard in your browser
+3. The **Onboarding Wizard** launches automatically on first run:
+   - **Step 1**: Welcome screen
+   - **Step 2**: Configure your AI model (enter Groq API key, test connection)
+   - **Step 3**: Optional integrations checklist (Splunk, Jira, VirusTotal, etc.)
+   - **Step 4**: Complete setup
+4. All settings are saved to PostgreSQL and persist across restarts
+
+After onboarding, use the **Settings** page (marketplace-style) to manage:
+- AI Model providers (Groq, OpenAI, Anthropic, Ollama)
+- Social Gateways (Telegram, Discord, Slack, Line, WhatsApp)
+- Security Integrations (Splunk, Jira, VirusTotal, ClickUp, Notion, HybridAnalysis)
+- Security settings (API key rotation)
 
 ---
 
 ## Environment Variables
 
-### Required
+### Required (auto-configured on Replit)
+
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string (Replit Managed) |
+| `SESSION_SECRET` | Express session secret |
+
+### Optional (can be configured via Web UI instead)
 
 | Variable | Description |
 |---|---|
 | `GROQ_API_KEY` | Groq API key for LLM agents |
 | `APP_API_KEY` | Internal API authentication key |
 | `SECRET_VAULT_KEY` | PII encryption master key |
-| `SESSION_SECRET` | Express session secret |
-
-### Optional - Social Gateways
-
-| Variable | Description |
-|---|---|
 | `ENABLE_SOCIAL_GATEWAY` | Set to `true` to enable social integrations |
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot API token (from @BotFather) |
 | `TELEGRAM_CHAT_ID` | Default Telegram chat/group ID for alerts |
 | `DISCORD_WEBHOOK_URL` | Discord webhook URL for notifications |
 | `SLACK_WEBHOOK_URL` | Slack incoming webhook URL |
+| `INFRA_PROVIDER` | Infrastructure provider (REPLIT/AWS/LOCAL) |
 
-### Optional - Database
+All optional variables can be configured from the **Settings** page in the Web UI. On first startup, `seed_from_env()` migrates any existing `.env` values into the database automatically.
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string (Replit Managed or self-hosted) |
-| `ENABLE_LEARNING` | Set to `true` to enable vector memory learning |
+---
+
+## Provider Pattern
+
+### AI Model Providers
+
+CyberSentinel uses a factory pattern for AI model providers:
+
+| Provider | Status | Description |
+|---|---|---|
+| **Groq** | Fully configured | Primary LLM provider (llama-3.3-70b-versatile) |
+| **OpenAI** | Stub | Ready for implementation |
+| **Anthropic** | Stub | Ready for implementation |
+| **Ollama** | Stub | Local model support |
+
+### Integration Hub
+
+| Integration | Status | Description |
+|---|---|---|
+| **Splunk** | Adapter | SIEM log forwarding via HEC |
+| **Jira** | Adapter | Ticket creation for incidents |
+| **VirusTotal** | Adapter | IOC enrichment and reputation |
+| **ClickUp** | Stub | Task management |
+| **Notion** | Stub | Documentation and wiki |
+| **HybridAnalysis** | Stub | Malware sandbox analysis |
+
+### Social Connectors
+
+| Connector | Status | Description |
+|---|---|---|
+| **Telegram** | Full | Alerts, commands, HITL feedback |
+| **Discord** | Stub | Webhook-based notifications |
+| **Slack** | Stub | Webhook-based notifications |
+| **Line** | Stub | Messaging integration |
+| **WhatsApp** | Stub | Messaging integration |
 
 ---
 
@@ -82,10 +140,10 @@ CyberSentinel AI is a dual-layer platform:
 ### Telegram Bot Setup
 
 1. Message @BotFather on Telegram and create a new bot with `/newbot`
-2. Copy the bot token and set `TELEGRAM_BOT_TOKEN`
-3. Add the bot to your security group/channel
-4. Get the chat ID and set `TELEGRAM_CHAT_ID`
-5. Set `ENABLE_SOCIAL_GATEWAY=true`
+2. Go to **Settings > Social Gateways** in the Web UI
+3. Enter the bot token and chat ID
+4. Toggle the Telegram integration to enabled
+5. Use the "Test Connection" button to verify
 
 The bot supports:
 - `/status` - System health overview
@@ -94,18 +152,6 @@ The bot supports:
 - `/help` - Available commands
 
 Reply to any alert message to send feedback to the Purple Team HITL loop.
-
-### Discord Setup (Extensibility Stub)
-
-1. Create a webhook in your Discord server settings
-2. Set `DISCORD_WEBHOOK_URL` to the webhook URL
-3. Implement the full gateway logic in `cybersentinel/app/gateways/discord.py`
-
-### Slack Setup (Extensibility Stub)
-
-1. Create an incoming webhook in your Slack workspace
-2. Set `SLACK_WEBHOOK_URL` to the webhook URL
-3. Implement the full gateway logic in `cybersentinel/app/gateways/slack.py`
 
 ### Adding a Custom Gateway
 
@@ -119,15 +165,12 @@ class WhatsAppGateway(BaseGateway):
     gateway_type = "messaging"
 
     async def send_alert(self, alert):
-        # Implementation here
         pass
 
     async def send_message(self, message, target=None):
-        # Implementation here
         pass
 
     async def handle_command(self, command, args, context):
-        # Implementation here
         pass
 
     async def start(self):
@@ -156,13 +199,8 @@ services:
       - "5000:5000"
       - "8000:8000"
     environment:
-      - GROQ_API_KEY=${GROQ_API_KEY}
-      - APP_API_KEY=${APP_API_KEY}
-      - SECRET_VAULT_KEY=${SECRET_VAULT_KEY}
       - DATABASE_URL=${DATABASE_URL}
-      - ENABLE_SOCIAL_GATEWAY=${ENABLE_SOCIAL_GATEWAY}
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - SESSION_SECRET=${SESSION_SECRET}
     volumes:
       - ./data:/app/data
     restart: unless-stopped
@@ -196,6 +234,20 @@ services:
 ---
 
 ## API Reference
+
+### Settings & Configuration
+
+| Endpoint | Auth | Description |
+|---|---|---|
+| `GET /api/settings` | No | All settings grouped by category |
+| `POST /api/settings` | API Key | Update a setting |
+| `GET /api/settings/onboarding` | No | Onboarding state |
+| `POST /api/settings/onboarding/complete` | No | Mark onboarding complete |
+| `GET /api/providers/models` | No | List AI model providers |
+| `GET /api/providers/integrations` | No | List integrations |
+| `GET /api/providers/social` | No | List social connectors |
+| `POST /api/providers/integrations/test` | API Key | Test integration |
+| `POST /api/settings/api-key/rotate` | API Key | Rotate API key |
 
 ### Health Endpoints
 
@@ -247,6 +299,8 @@ services:
 - API key validation uses timing-safe comparison (prevents timing attacks)
 - Rate limiting enforced on API key validation (120 req/min per key)
 - Circuit breaker pattern protects against external API cascading failures
+- Sensitive settings (API keys, tokens) encrypted at rest in PostgreSQL
+- API key rotation available via Settings page or API
 
 ---
 
@@ -257,23 +311,29 @@ cd cybersentinel
 python test_suite.py
 ```
 
-The test suite validates 6 phases:
-1. Infrastructure & Multi-Tenancy (Vault, Queue, PII Masking)
-2. Triple-Threat Squad Simulation (Blue/Red/Purple agents)
-3. AI Self-Evolution (Dynamic skills, Cron scheduler)
-4. UI/UX Gateway Connectivity (Express proxy, terminal)
-5. Social Gateway Framework (Telegram, multi-channel)
-6. Production Hardening (Immutable audit, metrics, circuit breakers)
+The test suite validates 7 phases (130 tests):
+1. Infrastructure & Multi-Tenancy (Vault, Queue, PII Masking) — 19 tests
+2. Triple-Threat Squad Simulation (Blue/Red/Purple agents) — 13 tests
+3. AI Self-Evolution (Dynamic skills, Cron scheduler) — 14 tests
+4. UI/UX Gateway Connectivity (Express proxy, terminal) — 17 tests
+5. Social Gateway Framework (Telegram, multi-channel) — 21 tests
+6. Production Hardening (Immutable audit, metrics, circuit breakers) — 18 tests
+7. Dynamic Platform & Modular Architecture (DynamicSettings, Providers, Hub, API) — 28 tests
 
 ---
 
 ## Changelog - v1.0.0
 
+- Dynamic Settings Engine: PostgreSQL-backed configuration replaces static .env
+- Plug-and-Play Provider Pattern: ModelProvider factory, IntegrationHub, SocialConnector stubs
+- Onboarding Wizard: 4-step first-run setup in the Web UI
+- Integrations Marketplace: Settings page with tabs for AI/Social/Integrations/Security
+- Auto-healing setup.sh with ASCII art banner and no API key prompts
+- Plugin system stubs (Excel parser, Web scraper)
 - Universal Social Gateway with Telegram integration and multi-channel extensibility
 - Production-grade queue with surge protection, metrics, and task TTL
 - Immutable vault audit logs with timestamps
 - Circuit breaker and retry-with-backoff resilience patterns
 - Production health endpoint with memory, queue, and agent monitoring
-- Gateway management page in Cyber Command Center
 - Strict API key validation with timing-safe comparison
-- 80+ automated tests across 6 phases
+- 130 automated tests across 7 phases

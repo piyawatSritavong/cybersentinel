@@ -1,33 +1,37 @@
 # CyberSentinel AI v1.0.0 - Sovereign Security Platform
 
 ## Overview
-CyberSentinel AI is an AI-Native Autonomous Security Operations Center (SOC) platform with a full-stack Sovereign Gateway dashboard. It implements Blue/Red/Purple team agent squads, self-evolving dynamic skills, async task queues, multi-tenant scoping, social gateway integrations, and production hardening with circuit breakers.
+CyberSentinel AI is an AI-Native Autonomous Security Operations Center (SOC) platform with a full-stack Sovereign Gateway dashboard. It implements Blue/Red/Purple team agent squads, self-evolving dynamic skills, async task queues, multi-tenant scoping, social gateway integrations, dynamic settings-in-DB, modular provider/adapter patterns, and production hardening with circuit breakers.
 
 ## Architecture
 - **Frontend**: React 18 + Vite + Tailwind CSS + Shadcn UI (dark cyber theme)
 - **Backend Proxy**: Express.js proxying to FastAPI AI core
 - **AI Core**: FastAPI (Python) with multi-agent ReAct loop
 - **Database**: PostgreSQL (Replit Managed) + ChromaDB (vector memory)
-- **Social Gateways**: Telegram (full), Discord (stub), Slack (stub)
+- **Dynamic Settings**: PostgreSQL-backed DynamicSettings engine (replaces static .env)
+- **Provider Pattern**: ModelProvider factory (Groq + stubs), IntegrationHub (6 adapters), SocialConnector stubs
+- **Social Gateways**: Telegram (full), Discord (stub), Slack (stub), Line (stub), WhatsApp (stub)
 - **Routing**: wouter (frontend), Express routes (backend)
 - **State**: @tanstack/react-query for data fetching
 
 ## Frontend Structure
 ```
 client/src/
-├── App.tsx                  # Router with Layout wrapper
+├── App.tsx                  # Router with Layout wrapper + OnboardingGate
 ├── index.css                # Dark cyber theme (HSL variables)
 ├── components/
-│   ├── layout.tsx           # Sidebar navigation (8 items) + main content
+│   ├── layout.tsx           # Sidebar navigation (9 items incl. Settings)
 │   └── ui/                  # Shadcn UI components
 ├── pages/
-│   ├── dashboard.tsx        # Sovereign Gateway overview + gateway status
+│   ├── dashboard.tsx        # Sovereign Gateway overview + integration status cards
 │   ├── alerts.tsx           # Alert feed + ingest form
 │   ├── agents.tsx           # Blue/Red/Purple squad management
 │   ├── skills.tsx           # Dynamic skill generation + listing
 │   ├── cron-jobs.tsx        # Security scheduler CRUD
 │   ├── nodes.tsx            # Distributed sensor node management
 │   ├── gateways.tsx         # Social Gateway management + test
+│   ├── settings.tsx         # Integrations Marketplace (4 tabs: AI/Social/Integrations/Security)
+│   ├── onboarding.tsx       # 4-step first-run setup wizard
 │   ├── terminal.tsx         # AI-powered interactive terminal
 │   └── not-found.tsx        # 404 page
 ├── hooks/                   # use-toast, use-mobile
@@ -40,7 +44,7 @@ client/src/
 ```
 server/
 ├── index.ts                 # Express bootstrap
-├── routes.ts                # API routes (proxy to FastAPI + local storage)
+├── routes.ts                # API routes (proxy to FastAPI + local storage + settings/providers)
 ├── storage.ts               # In-memory storage (alerts, cron, nodes, gateways, stats)
 ├── vite.ts                  # Vite dev server integration
 └── static.ts                # Static file serving (production)
@@ -54,7 +58,8 @@ shared/
 cybersentinel/app/
 ├── main.py                  # FastAPI Gateway v1.0.0 with all endpoints
 ├── core/
-│   ├── config.py            # Pydantic Settings (incl. gateway config)
+│   ├── config.py            # Pydantic Settings (incl. gateway config, infra_provider)
+│   ├── dynamic_settings.py  # DynamicSettings engine (PostgreSQL-backed, encrypted, singleton)
 │   ├── engine.py            # AgentSupervisor (ReAct Loop)
 │   ├── memory.py            # Multi-Tenant MemoryManager
 │   ├── vault.py             # SecretVault (PBKDF2+HMAC-SHA256, immutable audit)
@@ -67,6 +72,11 @@ cybersentinel/app/
 │   ├── security.py          # API Key Auth (timing-safe, rate limited)
 │   ├── resilience.py        # Circuit Breaker + Retry with Backoff
 │   └── normalizer.py        # Log format normalizer (OCSF)
+├── providers/
+│   ├── __init__.py          # Provider package init
+│   ├── model_provider.py    # ModelProvider factory (Groq, OpenAI/Anthropic/Ollama stubs)
+│   ├── integration_hub.py   # IntegrationHub (Splunk/Jira/VT/ClickUp/Notion/HybridAnalysis)
+│   └── social_connector.py  # SocialConnector stubs (Line, WhatsApp)
 ├── gateways/
 │   ├── __init__.py          # MultiChannelGateway manager
 │   ├── base.py              # Abstract BaseGateway interface
@@ -83,9 +93,35 @@ cybersentinel/app/
 │   ├── log_correlator.py    # Log Correlation
 │   └── ...                  # Other atomic tools
 ├── skills/                  # AI-generated dynamic skills directory
-├── plugins/ticketing/       # Ticketing Plugin System
+├── plugins/ticketing/       # Ticketing Plugin System (incl. excel_plugin, scraper_plugin stubs)
 └── utils/                   # Masking, Reporting
 ```
+
+## Dynamic Settings Engine
+- `DynamicSettings` class in `cybersentinel/app/core/dynamic_settings.py`
+- Loads/saves settings to PostgreSQL `system_settings` table
+- Falls back to env vars if DB is empty (backward compatibility)
+- Categories: ai_models, social_gateways, integrations, security, system
+- `seed_from_env()` auto-populates DB from .env on first run
+- Encrypted values (API keys) use PBKDF2-derived vault key + HMAC integrity
+- Thread-safe singleton via `get_dynamic_settings()`
+- Masked display: encrypted values shown as "****" in API responses
+
+## Provider Pattern
+- **ModelProvider**: Factory pattern with `get_model_provider(name)` and `list_providers()`
+  - GroqProvider: fully configured, uses groq_api_key from settings
+  - OpenAI/Anthropic/Ollama: stubs returning "not configured"
+- **IntegrationHub**: Registry of 6 integrations with `list_all()`, `test_integration(name)`, `get_status()`
+  - Splunk, Jira, VirusTotal: configured adapters (read from settings)
+  - ClickUp, Notion, HybridAnalysis: stubs
+- **SocialConnector**: Line + WhatsApp stubs with `list_social_connectors()`
+
+## Onboarding Flow
+- App.tsx queries `GET /api/settings/onboarding` on load
+- If `completed: false`, redirects to `/onboarding` wizard
+- 4-step wizard: Welcome > AI Model Setup > Integrations > Complete
+- On completion, POST to `/api/settings/onboarding/complete` marks done
+- Subsequent loads skip onboarding and go to dashboard
 
 ## API Endpoints
 ### Express Proxy Layer (port 5000)
@@ -106,6 +142,15 @@ cybersentinel/app/
 - GET  /api/sentinel/gateways      - Social gateway status
 - POST /api/sentinel/gateways/test - Test gateway connectivity
 - POST /api/sentinel/terminal      - Terminal command execution
+- GET  /api/settings               - All settings (dynamic, grouped by category)
+- POST /api/settings               - Update a setting
+- GET  /api/settings/onboarding    - Onboarding state
+- POST /api/settings/onboarding/complete - Mark onboarding complete
+- GET  /api/providers/models       - List model providers + status
+- GET  /api/providers/integrations - List integrations + status
+- GET  /api/providers/social       - List social connectors + status
+- POST /api/providers/integrations/test - Test integration connectivity
+- POST /api/settings/api-key/rotate - Rotate APP_API_KEY
 
 ### FastAPI Core (port 8000)
 - POST /v1/ingest              - Async alert ingestion
@@ -120,6 +165,14 @@ cybersentinel/app/
 - POST /v1/gateways/test       - Test gateway connectivity
 - GET  /v1/vault/audit         - Vault audit log
 - GET  /v1/infra/status        - Infrastructure adapter status
+- GET  /v1/settings            - Dynamic settings (all categories)
+- POST /v1/settings            - Update setting
+- GET  /v1/settings/onboarding - Onboarding state
+- POST /v1/settings/onboarding/complete - Complete onboarding
+- GET  /v1/providers/models    - Model providers list
+- GET  /v1/providers/integrations - Integrations list
+- POST /v1/providers/integrations/test - Test integration
+- POST /v1/settings/api-key/rotate - Rotate API key
 
 ## Key Dependencies
 - React 18, wouter, @tanstack/react-query, Shadcn UI, Tailwind CSS
@@ -138,6 +191,7 @@ cybersentinel/app/
 - TELEGRAM_CHAT_ID: Default Telegram chat ID
 - DISCORD_WEBHOOK_URL: Discord webhook URL
 - SLACK_WEBHOOK_URL: Slack webhook URL
+- INFRA_PROVIDER: Infrastructure provider (REPLIT/AWS/LOCAL)
 
 ## Production Hardening (v1.0.0)
 - Immutable vault audit logs (tuple-based append-only, capped at 10K entries)
@@ -160,17 +214,36 @@ cybersentinel/app/
 - `INFRA_PROVIDER=REPLIT` (default) reads DATABASE_URL from Replit secrets
 - `Infra.get_database_url()` returns the correct connection string for the active provider
 - `Infra.get_config()` returns full provider status (exposed at `/v1/infra/status`)
-- Database: Replit Managed PostgreSQL (tables: `incidents`, `feedback`)
+- Database: Replit Managed PostgreSQL (tables: `incidents`, `feedback`, `system_settings`, `onboarding_state`)
 
 ## Deployment Files
 - `docker-compose.yml` — Multi-container deployment (API + Dashboard)
 - `cybersentinel/Dockerfile` — Python FastAPI container
 - `Dockerfile.dashboard` — Node.js dashboard container
-- `setup.sh` — Automated setup script
+- `setup.sh` — Auto-healing setup script (ASCII art, no API key prompts, directs to Web UI)
 - `FINAL_RELEASE_REPORT.md` — Complete go-live documentation
+
+## Test Suite
+- 130/130 tests across 7 phases:
+  1. Infrastructure & Multi-Tenancy (Vault, Queue, PII Masking) — 19 tests
+  2. Triple-Threat Squad Simulation (Blue/Red/Purple agents) — 13 tests
+  3. AI Self-Evolution (Dynamic skills, Cron scheduler) — 14 tests
+  4. UI/UX Gateway Connectivity (Express proxy, terminal) — 17 tests
+  5. Social Gateway Framework (Telegram, multi-channel) — 21 tests
+  6. Production Hardening (Immutable audit, metrics, circuit breakers) — 18 tests
+  7. Dynamic Platform & Modular Architecture (DynamicSettings, Providers, Hub, API) — 28 tests
 
 ## Telegram Bot
 - Bot: @CyberSentinel_V1_bot (verified and online)
 - Commands: /status, /analyze <target>, /squad_stats, /help
 - HITL: Reply to any alert to forward feedback to Purple Team
 - Requires TELEGRAM_CHAT_ID to be set after sending /start to bot
+
+## Critical Notes
+- `infra_provider` field MUST exist in config.py Settings class (Pydantic validation)
+- ChromaDB MUST use LightweightEmbedding (SHA256-based) — sentence-transformers causes OOM
+- FastAPI may OOM kill during startup (665MB from blue_team import) — tests pass without running it
+- DynamicSettings `seed_from_env()` only seeds on first run (skips if DB has entries)
+- IntegrationHub method is `test_integration(name)` not `test(name)`
+- All Python imports must be absolute (from app.xxx import ...)
+- Platform "Optional" philosophy: missing API keys disable features gracefully, never crash

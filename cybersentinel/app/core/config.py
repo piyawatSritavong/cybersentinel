@@ -51,3 +51,9 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+try:
+    from app.core.dynamic_settings import get_dynamic_settings
+    dynamic_settings = get_dynamic_settings()
+except Exception:
+    dynamic_settings = None

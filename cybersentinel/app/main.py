@@ -14,7 +14,8 @@ try:
 except ImportError:
     PyPDF2 = None
 
-from app.core.config import settings
+from app.core.config import settings, dynamic_settings
+from app.core.dynamic_settings import get_dynamic_settings
 from app.core.memory import memory
 from app.core.vault import vault
 from app.core.tenant import TenantContext, DEFAULT_TENANT
@@ -45,6 +46,9 @@ from app.gateways.discord import DiscordGateway
 from app.gateways.slack import SlackGateway
 
 from config.infra_adapter import Infra
+from app.providers.model_provider import list_providers, get_model_provider
+from app.providers.integration_hub import IntegrationHub
+from app.providers.social_connector import list_social_connectors
 
 logging.basicConfig(
     level=logging.INFO,
@@ -110,6 +114,7 @@ class FeedbackWebhook(BaseModel):
 
 ticketing_manager = None
 multi_channel_gateway = MultiChannelGateway()
+integration_hub = IntegrationHub()
 
 
 def get_log_fingerprint(text: str) -> str:
@@ -125,6 +130,13 @@ def get_log_fingerprint(text: str) -> str:
 async def startup_event():
     global ticketing_manager
     logger.info("[STARTUP] Initializing CyberSentinel AI v1.0.0...")
+
+    ds = get_dynamic_settings()
+    if ds._db_available:
+        ds.seed_from_env()
+        logger.info("[STARTUP] Dynamic settings loaded from PostgreSQL")
+    else:
+        logger.warning("[STARTUP] Dynamic settings DB unavailable, using env fallback")
 
     init_chromadb()
     logger.info("[STARTUP] ChromaDB initialized with playbooks")
@@ -588,6 +600,104 @@ async def toggle_cron_job(job_id: str):
 async def delete_cron_job(job_id: str):
     scheduler.remove_job(job_id)
     return {"status": "deleted"}
+
+
+class SettingUpdateRequest(BaseModel):
+    category: str
+    key: str
+    value: str
+    encrypted: Optional[bool] = False
+    enabled: Optional[bool] = True
+    description: Optional[str] = ""
+
+
+@app.get("/v1/settings")
+async def get_settings():
+    ds = get_dynamic_settings()
+    return ds.get_all_settings()
+
+
+@app.post("/v1/settings", dependencies=[Depends(get_api_key)])
+async def update_setting(req: SettingUpdateRequest):
+    ds = get_dynamic_settings()
+    ds.set(req.category, req.key, req.value,
+           encrypted=req.encrypted or False,
+           description=req.description or "")
+    if req.enabled is not None:
+        if not req.enabled:
+            ds.toggle(req.category, req.key)
+    return {"status": "updated", "category": req.category, "key": req.key}
+
+
+@app.get("/v1/settings/onboarding")
+async def get_onboarding():
+    ds = get_dynamic_settings()
+    if not ds._db_available:
+        return {"completed": False, "steps_completed": []}
+    try:
+        from sqlalchemy import create_engine, text
+        db_url = os.environ.get("DATABASE_URL", "")
+        if not db_url:
+            return {"completed": False, "steps_completed": []}
+        engine = create_engine(db_url)
+        with engine.connect() as conn:
+            row = conn.execute(text("SELECT completed, steps_completed FROM onboarding_state ORDER BY id DESC LIMIT 1")).fetchone()
+            if row:
+                return {"completed": row[0], "steps_completed": row[1] or []}
+            return {"completed": False, "steps_completed": []}
+    except Exception:
+        return {"completed": False, "steps_completed": []}
+
+
+@app.post("/v1/settings/onboarding/complete")
+async def complete_onboarding():
+    try:
+        from sqlalchemy import create_engine, text
+        db_url = os.environ.get("DATABASE_URL", "")
+        if not db_url:
+            return {"status": "error", "message": "Database not available"}
+        engine = create_engine(db_url)
+        with engine.connect() as conn:
+            conn.execute(text(
+                "INSERT INTO onboarding_state (completed, completed_at, steps_completed) "
+                "VALUES (true, CURRENT_TIMESTAMP, ARRAY['welcome','ai_model','integrations','complete'])"
+            ))
+            conn.commit()
+        return {"status": "completed"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/v1/providers/models")
+async def get_model_providers():
+    return list_providers()
+
+
+@app.get("/v1/providers/integrations")
+async def get_integrations():
+    return integration_hub.list_all()
+
+
+@app.post("/v1/providers/integrations/test", dependencies=[Depends(get_api_key)])
+async def test_integration(data: Dict[str, Any] = {}):
+    name = data.get("name", "")
+    result = integration_hub.test_integration(name)
+    return result
+
+
+@app.get("/v1/providers/social")
+async def get_social_connectors():
+    return list_social_connectors()
+
+
+@app.post("/v1/settings/api-key/rotate", dependencies=[Depends(get_api_key)])
+async def rotate_api_key():
+    import secrets
+    new_key = secrets.token_urlsafe(32)
+    ds = get_dynamic_settings()
+    ds.set("security", "app_api_key", new_key, encrypted=True,
+           description="Application API key")
+    return {"status": "rotated", "message": "New API key generated. Update your clients."}
 
 
 if __name__ == "__main__":

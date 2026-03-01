@@ -3,11 +3,22 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 
 const SENTINEL_API = "http://localhost:8000";
-const API_KEY = process.env.APP_API_KEY ?? "";
+let _cachedApiKey: string | null = null;
+
+function getApiKey(): string {
+  if (!_cachedApiKey) {
+    _cachedApiKey = process.env.APP_API_KEY ?? "";
+  }
+  return _cachedApiKey;
+}
+
+function refreshApiKey(): void {
+  _cachedApiKey = null;
+}
 
 async function proxyToSentinel(path: string, method: string = "GET", body?: any) {
   const headers: Record<string, string> = {
-    "X-API-KEY": API_KEY,
+    "X-API-KEY": getApiKey(),
     "Content-Type": "application/json",
   };
 
@@ -218,6 +229,109 @@ export async function registerRoutes(
         status: "error",
         message: `Gateway test failed: ${err.message}. The CyberSentinel backend may not be running.`,
       });
+    }
+  });
+
+  app.get("/api/settings", async (_req: Request, res: Response) => {
+    try {
+      const data = await proxyToSentinel("/v1/settings");
+      res.json(data);
+    } catch {
+      res.json({
+        ai_models: {},
+        social_gateways: {},
+        integrations: {},
+        security: {},
+        system: {},
+      });
+    }
+  });
+
+  app.post("/api/settings", async (req: Request, res: Response) => {
+    try {
+      const data = await proxyToSentinel("/v1/settings", "POST", req.body);
+      res.json(data);
+    } catch (err: any) {
+      res.json({ status: "error", message: err.message });
+    }
+  });
+
+  app.get("/api/settings/onboarding", async (_req: Request, res: Response) => {
+    try {
+      const data = await proxyToSentinel("/v1/settings/onboarding");
+      res.json(data);
+    } catch {
+      res.json({ completed: false, steps_completed: [] });
+    }
+  });
+
+  app.post("/api/settings/onboarding/complete", async (_req: Request, res: Response) => {
+    try {
+      const data = await proxyToSentinel("/v1/settings/onboarding/complete", "POST", {});
+      res.json(data);
+    } catch (err: any) {
+      res.json({ status: "error", message: err.message });
+    }
+  });
+
+  app.get("/api/providers/models", async (_req: Request, res: Response) => {
+    try {
+      const data = await proxyToSentinel("/v1/providers/models");
+      res.json(data);
+    } catch {
+      res.json([
+        { name: "groq", display_name: "Groq", configured: false, status: "offline" },
+        { name: "openai", display_name: "OpenAI", configured: false, status: "not_configured" },
+        { name: "anthropic", display_name: "Anthropic", configured: false, status: "not_configured" },
+        { name: "ollama", display_name: "Ollama", configured: false, status: "not_configured" },
+      ]);
+    }
+  });
+
+  app.get("/api/providers/integrations", async (_req: Request, res: Response) => {
+    try {
+      const data = await proxyToSentinel("/v1/providers/integrations");
+      res.json(data);
+    } catch {
+      res.json([
+        { name: "splunk", display_name: "Splunk SIEM", category: "siem", configured: false },
+        { name: "jira", display_name: "Jira", category: "ticketing", configured: false },
+        { name: "virustotal", display_name: "VirusTotal", category: "threat_intel", configured: false },
+        { name: "clickup", display_name: "ClickUp", category: "ticketing", configured: false },
+        { name: "notion", display_name: "Notion", category: "documentation", configured: false },
+        { name: "hybrid_analysis", display_name: "Hybrid Analysis", category: "threat_intel", configured: false },
+      ]);
+    }
+  });
+
+  app.post("/api/providers/integrations/test", async (req: Request, res: Response) => {
+    try {
+      const data = await proxyToSentinel("/v1/providers/integrations/test", "POST", req.body);
+      res.json(data);
+    } catch (err: any) {
+      res.json({ success: false, message: err.message });
+    }
+  });
+
+  app.get("/api/providers/social", async (_req: Request, res: Response) => {
+    try {
+      const data = await proxyToSentinel("/v1/providers/social");
+      res.json(data);
+    } catch {
+      res.json([
+        { name: "line", display_name: "Line", configured: false, status: "not_configured" },
+        { name: "whatsapp", display_name: "WhatsApp", configured: false, status: "not_configured" },
+      ]);
+    }
+  });
+
+  app.post("/api/settings/api-key/rotate", async (_req: Request, res: Response) => {
+    try {
+      const data = await proxyToSentinel("/v1/settings/api-key/rotate", "POST", {});
+      refreshApiKey();
+      res.json(data);
+    } catch (err: any) {
+      res.json({ status: "error", message: err.message });
     }
   });
 

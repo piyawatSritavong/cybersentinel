@@ -34,7 +34,7 @@ def log_result(phase, test, passed, detail=""):
 def run_all_tests():
     print("\n" + "=" * 70)
     print("  CYBERSENTINEL SOVEREIGN SELF-TESTING & STRESS-TEST SUITE v1.0")
-    print("  Comprehensive E2E Validation - 6 Phases")
+    print("  Comprehensive E2E Validation - 7 Phases")
     print("=" * 70)
 
     phase1_infrastructure()
@@ -43,6 +43,7 @@ def run_all_tests():
     asyncio.run(phase4_ui_gateway())
     phase5_social_gateway()
     phase6_production_hardening()
+    phase7_dynamic_platform()
 
     print_final_report()
 
@@ -918,6 +919,202 @@ def phase6_production_hardening():
         log_result("P6", "Security hardening", False, traceback.format_exc())
 
 
+def phase7_dynamic_platform():
+    print("\n--- PHASE 7: Dynamic Platform & Modular Architecture ---\n")
+
+    print("  [DynamicSettings Engine]")
+    try:
+        from app.core.dynamic_settings import get_dynamic_settings, DynamicSettings
+
+        ds = get_dynamic_settings()
+        log_result("P7", "DynamicSettings singleton initializes",
+                   ds is not None,
+                   f"db_available: {ds._db_available}")
+
+        log_result("P7", "DynamicSettings is singleton",
+                   get_dynamic_settings() is ds,
+                   "Same instance returned")
+
+        ds.seed_from_env()
+        all_s = ds.get_all_settings()
+        log_result("P7", "seed_from_env populates categories",
+                   len(all_s) >= 4,
+                   f"Categories: {list(all_s.keys())}")
+
+        ds.set("test_cat", "test_key", "test_value")
+        val = ds.get("test_cat", "test_key")
+        log_result("P7", "DynamicSettings set/get works",
+                   val == "test_value",
+                   f"Got: {val}")
+
+        cat_items = ds.get_category("test_cat")
+        log_result("P7", "get_category returns items",
+                   "test_key" in cat_items,
+                   f"Items: {cat_items}")
+
+        log_result("P7", "is_enabled returns True for active setting",
+                   ds.is_enabled("test_cat", "test_key"),
+                   "Enabled by default")
+
+        ds.toggle("test_cat", "test_key")
+        log_result("P7", "toggle disables setting",
+                   not ds.is_enabled("test_cat", "test_key"),
+                   "Toggled off")
+
+        ds.toggle("test_cat", "test_key")
+
+        ds.set("ai_models", "test_encrypted_key", "my-secret-value", encrypted=True)
+        masked = ds.get_all_settings()
+        ai_settings = masked.get("ai_models", {})
+        secret_entry = ai_settings.get("test_encrypted_key", {})
+        is_masked = (isinstance(secret_entry, dict) and secret_entry.get("value") == "****") or secret_entry == "****"
+        log_result("P7", "Encrypted values masked in get_all_settings",
+                   is_masked,
+                   f"Masked value: {secret_entry}")
+
+        fb = ds.get("nonexistent_cat", "nonexistent_key", "fallback_default")
+        log_result("P7", "Fallback default works for missing keys",
+                   fb == "fallback_default",
+                   f"Got: {fb}")
+
+    except Exception as e:
+        log_result("P7", "DynamicSettings Engine", False, traceback.format_exc())
+
+    print("\n  [ModelProvider Factory]")
+    try:
+        from app.providers.model_provider import list_providers, get_model_provider
+
+        providers = list_providers()
+        log_result("P7", "list_providers returns 4 providers",
+                   len(providers) == 4,
+                   f"Count: {len(providers)}")
+
+        provider_names = [p["name"] for p in providers]
+        log_result("P7", "All provider names present",
+                   all(n in provider_names for n in ["groq", "openai", "anthropic", "ollama"]),
+                   f"Names: {provider_names}")
+
+        groq = get_model_provider("groq")
+        log_result("P7", "GroqProvider instantiates",
+                   groq is not None and hasattr(groq, 'chat'),
+                   f"Type: {type(groq).__name__}")
+
+        openai = get_model_provider("openai")
+        log_result("P7", "OpenAI stub doesn't crash",
+                   openai is not None and not openai.is_configured(),
+                   "Stub returns not_configured")
+
+    except Exception as e:
+        log_result("P7", "ModelProvider Factory", False, traceback.format_exc())
+
+    print("\n  [IntegrationHub]")
+    try:
+        from app.providers.integration_hub import IntegrationHub
+
+        hub = IntegrationHub()
+        integrations = hub.list_all()
+        log_result("P7", "IntegrationHub lists 6+ integrations",
+                   len(integrations) >= 6,
+                   f"Count: {len(integrations)}")
+
+        names = [i["name"] for i in integrations]
+        log_result("P7", "All integration names present",
+                   all(n in names for n in ["splunk", "jira", "virustotal", "clickup", "notion", "hybrid_analysis"]),
+                   f"Names: {names}")
+
+        test_result = hub.test_integration("clickup")
+        log_result("P7", "Stub integration test returns not configured",
+                   not test_result.get("success"),
+                   f"Message: {test_result.get('message', '')[:60]}")
+
+        status = hub.get_status()
+        log_result("P7", "IntegrationHub.get_status returns summary",
+                   "total" in status and "configured" in status,
+                   f"Total: {status.get('total')}, Configured: {status.get('configured')}")
+
+    except Exception as e:
+        log_result("P7", "IntegrationHub", False, traceback.format_exc())
+
+    print("\n  [SocialConnector Stubs]")
+    try:
+        from app.providers.social_connector import list_social_connectors
+
+        connectors = list_social_connectors()
+        log_result("P7", "list_social_connectors returns Line and WhatsApp",
+                   len(connectors) >= 2,
+                   f"Count: {len(connectors)}")
+
+        connector_names = [c["name"] for c in connectors]
+        log_result("P7", "Line and WhatsApp stubs exist",
+                   "line" in connector_names and "whatsapp" in connector_names,
+                   f"Names: {connector_names}")
+
+        for c in connectors:
+            if c["name"] in ["line", "whatsapp"]:
+                log_result("P7", f"{c['name'].capitalize()} stub is not configured",
+                           not c["configured"],
+                           f"Status: {c.get('status')}")
+
+    except Exception as e:
+        log_result("P7", "SocialConnector Stubs", False, traceback.format_exc())
+
+    print("\n  [Settings API via Express]")
+    try:
+        import requests
+
+        r = requests.get(f"{EXPRESS_URL}/api/settings", timeout=5)
+        log_result("P7", "GET /api/settings returns data",
+                   r.status_code == 200,
+                   f"Status: {r.status_code}")
+
+        r2 = requests.get(f"{EXPRESS_URL}/api/settings/onboarding", timeout=5)
+        data = r2.json()
+        log_result("P7", "GET /api/settings/onboarding returns state",
+                   "completed" in data,
+                   f"Completed: {data.get('completed')}")
+
+        r3 = requests.get(f"{EXPRESS_URL}/api/providers/models", timeout=5)
+        models = r3.json()
+        log_result("P7", "GET /api/providers/models returns list",
+                   isinstance(models, list) and len(models) >= 4,
+                   f"Count: {len(models)}")
+
+        r4 = requests.get(f"{EXPRESS_URL}/api/providers/integrations", timeout=5)
+        integ = r4.json()
+        log_result("P7", "GET /api/providers/integrations returns list",
+                   isinstance(integ, list) and len(integ) >= 6,
+                   f"Count: {len(integ)}")
+
+        r5 = requests.get(f"{EXPRESS_URL}/api/providers/social", timeout=5)
+        social = r5.json()
+        log_result("P7", "GET /api/providers/social returns connectors",
+                   isinstance(social, list) and len(social) >= 2,
+                   f"Count: {len(social)}")
+
+    except Exception as e:
+        log_result("P7", "Settings API via Express", False, traceback.format_exc())
+
+    print("\n  [Graceful Degradation]")
+    try:
+        from app.providers.model_provider import get_model_provider
+        from app.providers.integration_hub import IntegrationHub
+        from app.providers.social_connector import list_social_connectors
+
+        anthropic = get_model_provider("anthropic")
+        log_result("P7", "Missing API key doesn't crash (Anthropic stub)",
+                   not anthropic.is_configured(),
+                   "Gracefully returns not_configured")
+
+        hub = IntegrationHub()
+        notion = hub.get("notion")
+        log_result("P7", "Missing integration key doesn't crash (Notion stub)",
+                   not notion.is_configured(),
+                   "Gracefully disabled")
+
+    except Exception as e:
+        log_result("P7", "Graceful Degradation", False, traceback.format_exc())
+
+
 def print_final_report():
     print("\n" + "=" * 70)
     print("  FINAL VALIDATION REPORT - CyberSentinel v1.0.0 Go-Live")
@@ -940,12 +1137,13 @@ def print_final_report():
         "P4": "Phase 4: UI/UX & Gateway Connectivity",
         "P5": "Phase 5: Social Gateway Framework",
         "P6": "Phase 6: Production Hardening",
+        "P7": "Phase 7: Dynamic Platform & Modular Architecture",
     }
 
     total_pass = 0
     total_fail = 0
 
-    for p_key in ["P1", "P2", "P3", "P4", "P5", "P6"]:
+    for p_key in ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]:
         if p_key in phases:
             p = phases[p_key]
             total = p["pass"] + p["fail"]

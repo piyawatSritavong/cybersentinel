@@ -1,0 +1,48 @@
+CyberSentinel Modular Platform Evolution
+Role: You are a Senior System Architect & Full-Stack Engineer. Your mission is to refactor CyberSentinel into a Plug-and-Play Platform inspired by the flexibility of OpenClaw and the scalability of enterprise SOC systems.
+
+🎯 1. Core Architectural Refactor: From Static to Dynamic
+Decouple Configuration: Stop relying solely on .env for operational settings (API Keys, URLs, Models).
+
+Settings-in-DB: Migrate all "Integration Settings" to the Replit Managed PostgreSQL.
+
+Implement a SystemSettings and Vault table to store encrypted API keys.
+
+Create a Settings API (GET/POST /api/settings) to allow the Frontend to update configurations without restarting the server.
+
+Adapter & Provider Pattern: * AI Models: Create a ModelProvider factory. Support Groq by default but include stubs/placeholders for OpenAI, Anthropic, and Ollama.
+
+Social Gateways: Refactor TelegramGateway into a modular SocialConnector. Add placeholder structures for Line and WhatsApp.
+
+Integrations Hub: Refactor Splunk, Jira, and VirusTotal into an "Integrations" module. Add placeholders for ClickUp, Notion, and Hybrid Analysis.
+
+🛠️ 2. Dynamic Plugin & Tools System
+Ticketing Plugins: Implement a dynamic loader for ticketing. Support Webhooks and CSV by default, but add placeholders for Excel/Word parsing and Web Scraping.
+
+The "Optional" Philosophy: Ensure all integrations are OPTIONAL. If a key is missing, the system should gracefully disable that feature in the UI instead of crashing.
+
+🎨 3. Frontend & Onboarding (OpenClaw Style)
+Onboarding Wizard: Create a "First-Run" UI. If the database is empty, lead the user to a setup page to configure their first API Key (Model or Gateway).
+
+Integrations Dashboard: Build a "Marketplace-style" settings page where users can toggle plugins (Splunk, Jira, Telegram, etc.) and input credentials directly into the UI.
+
+Custom API Auth: Allow users to define or rotate their own APP_API_KEY via the UI.
+
+📦 4. The Master Installer (setup.sh)
+Refactor the root setup.sh to match the OpenClaw experience:
+
+Visuals: Add professional ASCII art and clear step indicators (e.g., [1/3] Environment Audit).
+
+Auto-Healing: If Docker or Python is missing, offer to install it (especially for macOS/Homebrew or Linux/APT).
+
+No-Hardcode: The installer should NOT ask for API keys. It should focus on setting up the environment, then direct the user to the Web UI for configuration.
+
+🧪 5. Autonomous Evolution & Validation
+Scan & Fix: Analyze the entire codebase. Identify every file where hardcoded .env logic exists and replace it with the new Dynamic Settings logic. Do not wait for my instruction on specific files—execute the refactor holistically.
+
+Continuous Testing: Run the test suite after every major change. If a test fails due to the new architecture, fix the code immediately.
+
+Self-Improvement: If you find a more efficient way to implement the "Adapter Pattern" for these specific tools, proceed with the improvement.
+
+⚠️ Execution Directive:
+"Execute the refactor now. Transform CyberSentinel into a modular, multi-provider platform. Ensure the setup is as seamless as OpenClaw. Test every transition. Do not stop until the system is fully dynamic and the UI provides all optional configuration paths."

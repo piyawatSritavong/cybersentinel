@@ -36,6 +36,18 @@ def _timing_safe_compare(a: str, b: str) -> bool:
     return hmac.compare_digest(a.encode("utf-8"), b.encode("utf-8"))
 
 
+def _get_active_api_key() -> str:
+    try:
+        from app.core.dynamic_settings import get_dynamic_settings
+        ds = get_dynamic_settings()
+        db_key = ds.get("security", "app_api_key")
+        if db_key:
+            return db_key
+    except Exception:
+        pass
+    return settings.app_api_key
+
+
 async def get_api_key(api_key_header: str = Security(api_key_header)):
     if not api_key_header:
         raise HTTPException(
@@ -43,8 +55,9 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
             detail="API Key header (X-API-KEY) missing",
         )
 
-    if not settings.app_api_key:
-        logger.error("APP_API_KEY is not set in environment variables!")
+    active_key = _get_active_api_key()
+    if not active_key:
+        logger.error("APP_API_KEY is not set in environment or dynamic settings!")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server API Key configuration missing",
@@ -59,7 +72,7 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
             detail="Rate limit exceeded. Try again later.",
         )
 
-    if _timing_safe_compare(api_key_header, settings.app_api_key):
+    if _timing_safe_compare(api_key_header, active_key):
         return api_key_header
 
     logger.warning(f"Invalid API Key attempt: {key_prefix}****")

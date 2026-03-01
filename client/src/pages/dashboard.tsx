@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Shield, AlertTriangle, CheckCircle, XCircle, Activity, Clock, Wrench, Users, Globe, Wifi, WifiOff } from "lucide-react";
+import { Shield, AlertTriangle, CheckCircle, XCircle, Activity, Clock, Wrench, Users, Globe, Wifi, WifiOff, Puzzle, Brain } from "lucide-react";
 import { Link } from "wouter";
 
 interface HealthData {
@@ -52,6 +52,20 @@ export default function Dashboard() {
     queryKey: ["/api/sentinel/gateways"],
     refetchInterval: 15000,
   });
+
+  const { data: providers } = useQuery<{ name: string; display_name: string; configured: boolean; status: string }[]>({
+    queryKey: ["/api/providers/models"],
+    refetchInterval: 30000,
+  });
+
+  const { data: integrations } = useQuery<{ name: string; display_name: string; category: string; configured: boolean }[]>({
+    queryKey: ["/api/providers/integrations"],
+    refetchInterval: 30000,
+  });
+
+  const configuredIntegrations = (integrations ?? []).filter(i => i.configured).length;
+  const totalIntegrations = (integrations ?? []).length;
+  const activeProvider = (providers ?? []).find(p => p.configured);
 
   const metricCards = [
     {
@@ -124,6 +138,39 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="border-border" data-testid="card-configured-integrations">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Configured Integrations</p>
+                <p data-testid="text-metric-configured-integrations" className="text-2xl font-bold mt-1">
+                  {configuredIntegrations}/{totalIntegrations}
+                </p>
+              </div>
+              <div className="bg-purple-500/10 p-2.5 rounded-lg">
+                <Puzzle className="h-5 w-5 text-purple-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border" data-testid="card-ai-provider">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-xs text-muted-foreground">AI Provider</p>
+                <p data-testid="text-metric-ai-provider" className="text-2xl font-bold mt-1">
+                  {activeProvider ? activeProvider.display_name : "Not Configured"}
+                </p>
+              </div>
+              <div className="bg-cyan-500/10 p-2.5 rounded-lg">
+                <Brain className="h-5 w-5 text-cyan-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
