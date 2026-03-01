@@ -63,12 +63,19 @@ check_command node && ok "Node.js found" || warn "Node.js missing"
 step 3 "Installation"
 mkdir -p data/vector_db data/exports app/skills
 
-# ติดตั้ง Python Dependencies
-if check_command pip3; then
-    pip3 install -r requirements.txt --quiet && ok "Backend libraries installed"
-elif check_command pip; then
-    pip install -r requirements.txt --quiet && ok "Backend libraries installed"
+# [FIX] สร้าง Virtual Environment เพื่อเลี่ยง error: externally-managed-environment
+if [ ! -d "venv" ]; then
+    echo "  Creating Python Virtual Environment..."
+    python3 -m venv venv
 fi
+
+# Activate venv และติดตั้ง dependencies
+source venv/bin/activate
+ok "Virtual Environment Activated"
+
+echo "  Installing Python dependencies..."
+pip install --upgrade pip --quiet
+pip install -r requirements.txt --quiet && ok "Backend libraries installed"
 
 # ติดตั้ง Node.js (Frontend)
 if [ -f "package.json" ]; then
@@ -88,12 +95,11 @@ echo -e "${GREEN}${BOLD}========================================================
 echo -e "${GREEN}${BOLD}  Everything is ready! Starting Backend and Frontend...${NC}"
 echo -e "${GREEN}${BOLD}========================================================${NC}"
 
-# [MAGIC BITS] รันทุกอย่างให้เองในคำสั่งเดียว
-# 1. รัน Backend ใน background
-(python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 > /dev/null 2>&1 &)
+# [FIX] รัน Backend ผ่าน venv ที่เราสร้างไว้
+(source venv/bin/activate && python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 > /dev/null 2>&1 &)
 ok "Backend started at http://localhost:8000"
 
-# 2. รัน Frontend ในตำแหน่งที่ถูกต้อง
+# รัน Frontend
 if [ -f "package.json" ]; then
     npm run dev
 elif [ -d "client" ]; then
