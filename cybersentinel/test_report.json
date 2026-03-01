@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-01T17:43:08Z",
+  "timestamp": "2026-03-01T18:03:45Z",
   "version": "1.0.0",
   "summary": {
     "total": 130,
@@ -42,19 +42,19 @@
       "phase": "P1",
       "test": "Vault stores IP and returns FTKN token",
       "status": "PASS",
-      "detail": "Token: FTKN-C014BC77FB5F"
+      "detail": "Token: FTKN-120B15E4111E"
     },
     {
       "phase": "P1",
       "test": "Vault stores email PII as FTKN token",
       "status": "PASS",
-      "detail": "Token: FTKN-07BB63908906"
+      "detail": "Token: FTKN-5969A388C025"
     },
     {
       "phase": "P1",
       "test": "Vault generates unique tokens per secret",
       "status": "PASS",
-      "detail": "Token: FTKN-9351335FCF6E"
+      "detail": "Token: FTKN-46B399B88638"
     },
     {
       "phase": "P1",
@@ -114,7 +114,7 @@
       "phase": "P1",
       "test": "Task IDs follow expected format",
       "status": "PASS",
-      "detail": "Sample: task-d6eeac1f"
+      "detail": "Sample: task-910b76f2"
     },
     {
       "phase": "P1",
@@ -162,7 +162,7 @@
       "phase": "P2",
       "test": "Blue Team produced analysis (>100 chars)",
       "status": "PASS",
-      "detail": "Response: 3927 chars"
+      "detail": "Response: 2983 chars"
     },
     {
       "phase": "P2",
@@ -180,7 +180,7 @@
       "phase": "P2",
       "test": "Red Team produced exploit report (>100 chars)",
       "status": "PASS",
-      "detail": "Response: 2973 chars"
+      "detail": "Response: 2851 chars"
     },
     {
       "phase": "P2",
@@ -198,7 +198,7 @@
       "phase": "P2",
       "test": "Purple Team produced gap analysis (>100 chars)",
       "status": "PASS",
-      "detail": "Response: 4763 chars"
+      "detail": "Response: 4158 chars"
     },
     {
       "phase": "P2",
@@ -244,7 +244,7 @@
     },
     {
       "phase": "P3",
-      "test": "Skill file written to disk (1596 bytes)",
+      "test": "Skill file written to disk (1638 bytes)",
       "status": "PASS",
       "detail": "Path: /home/runner/workspace/cybersentinel/app/skills/log4j_detector.py"
     },
@@ -360,7 +360,7 @@
       "phase": "P4",
       "test": "Create cron job via Express",
       "status": "PASS",
-      "detail": "ID: cron-d62af20f"
+      "detail": "ID: cron-f749f48e"
     },
     {
       "phase": "P4",

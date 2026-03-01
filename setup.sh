@@ -22,7 +22,7 @@ BOLD='\033[1m'
 DIM='\033[2m'
 NC='\033[0m'
 
-REPO_URL="${CYBERSENTINEL_REPO:-https://github.com/your-org/cybersentinel.git}"
+REPO_URL="${CYBERSENTINEL_REPO:-https://github.com/piyawatSritavong/cybersentinel.git}"
 PROJECT_DIR="cybersentinel"
 VENV_DIR=".venv"
 BACKEND_PORT=8000
@@ -204,31 +204,61 @@ ok "All core dependencies satisfied"
 
 step 3 "Project Structure & Directory Setup"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+CWD="$(pwd)"
 PROJECT_ROOT=""
 
-if [ -f "$SCRIPT_DIR/cybersentinel/app/main.py" ] && [ -f "$SCRIPT_DIR/package.json" ]; then
-  PROJECT_ROOT="$SCRIPT_DIR"
-  ok "Project found at $PROJECT_ROOT"
-elif [ -f "$SCRIPT_DIR/app/main.py" ]; then
-  PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-  ok "Running from inside cybersentinel/, project root: $PROJECT_ROOT"
-elif [ -f "./cybersentinel/app/main.py" ] && [ -f "./package.json" ]; then
-  PROJECT_ROOT="$(pwd)"
-  ok "Project found in current directory"
-elif [ -f "./app/main.py" ]; then
-  PROJECT_ROOT="$(cd .. && pwd)"
-  ok "Running from inside cybersentinel/, project root: $PROJECT_ROOT"
-else
-  info "Project not found locally. Cloning repository..."
-  if check_command git; then
-    git clone "$REPO_URL" "$PROJECT_DIR" 2>/dev/null
-    PROJECT_ROOT="$(pwd)/$PROJECT_DIR"
-    ok "Repository cloned to $PROJECT_ROOT"
-  else
+find_project() {
+  if [ -f "$CWD/package.json" ] && [ -d "$CWD/cybersentinel/app" ]; then
+    PROJECT_ROOT="$CWD"
+    ok "Project found in current directory: $PROJECT_ROOT"
+    return 0
+  fi
+
+  if [ -f "$CWD/package.json" ] && [ -f "$CWD/app/main.py" ]; then
+    PROJECT_ROOT="$CWD"
+    ok "Project found in current directory: $PROJECT_ROOT"
+    return 0
+  fi
+
+  if [ -f "$CWD/app/main.py" ] && [ -f "$CWD/../package.json" ]; then
+    PROJECT_ROOT="$(cd "$CWD/.." && pwd)"
+    ok "Running from inside cybersentinel/, project root: $PROJECT_ROOT"
+    return 0
+  fi
+
+  if [ -n "${BASH_SOURCE[0]:-}" ] && [ "${BASH_SOURCE[0]}" != "$0" ] 2>/dev/null; then
+    local SCRIPT_DIR
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [ -f "$SCRIPT_DIR/package.json" ] && [ -d "$SCRIPT_DIR/cybersentinel/app" ]; then
+      PROJECT_ROOT="$SCRIPT_DIR"
+      ok "Project found via script location: $PROJECT_ROOT"
+      return 0
+    fi
+  fi
+
+  if [ -d "$CWD/$PROJECT_DIR" ] && [ -f "$CWD/$PROJECT_DIR/package.json" ]; then
+    PROJECT_ROOT="$CWD/$PROJECT_DIR"
+    ok "Project found in ./$PROJECT_DIR subfolder"
+    return 0
+  fi
+
+  return 1
+}
+
+if ! find_project; then
+  info "Project not found locally. Cloning from GitHub..."
+  if ! check_command git; then
     fail "git not found and project directory missing. Cannot continue."
     exit 1
   fi
+  git clone --depth 1 "$REPO_URL" "$PROJECT_DIR"
+  if [ $? -ne 0 ]; then
+    fail "git clone failed. Check your internet connection and repo URL."
+    fail "Repo: $REPO_URL"
+    exit 1
+  fi
+  PROJECT_ROOT="$CWD/$PROJECT_DIR"
+  ok "Repository cloned to $PROJECT_ROOT"
 fi
 
 cd "$PROJECT_ROOT"

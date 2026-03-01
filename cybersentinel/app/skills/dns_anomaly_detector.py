@@ -1,50 +1,47 @@
 import logging
 import re
 from collections import defaultdict
+from typing import Dict, List
 
-def execute_dns_anomaly_detector(dns_queries, threshold=100, window_size=60):
+def execute_dns_anomaly_detector(dns_queries: List[str], threshold: int = 5, max_query_length: int = 100) -> Dict:
     """
     Detect DNS tunneling and exfiltration by analyzing DNS query patterns.
 
     Args:
-        dns_queries (list): List of DNS query logs with timestamp and query details.
-        threshold (int): Threshold for detecting anomalies (default: 100).
-        window_size (int): Time window size in seconds for analyzing queries (default: 60).
+    - dns_queries (List[str]): A list of DNS queries to analyze.
+    - threshold (int): The minimum number of similar queries required to trigger an anomaly detection. Defaults to 5.
+    - max_query_length (int): The maximum length of a DNS query. Defaults to 100.
 
     Returns:
-        dict: Dictionary with 'status', 'result', and 'details' keys.
+    - Dict: A dictionary containing the status, result, and details of the anomaly detection.
     """
+
     logging.basicConfig(level=logging.INFO)
     result = {'status': 'success', 'result': False, 'details': {}}
 
     try:
-        # Parse DNS queries and extract query names and timestamps
-        query_names = []
-        timestamps = []
-        for query in dns_queries:
-            query_name = re.search(r'query: (.+)', query).group(1)
-            timestamp = re.search(r'timestamp: (\d+)', query).group(1)
-            query_names.append(query_name)
-            timestamps.append(int(timestamp))
-
-        # Analyze query patterns using a sliding window approach
         query_counts = defaultdict(int)
-        for i in range(len(query_names)):
-            query_counts[query_names[i]] += 1
-            if i >= window_size:
-                query_counts[query_names[i - window_size]] -= 1
-                if query_counts[query_names[i - window_size]] == 0:
-                    del query_counts[query_names[i - window_size]]
+        for query in dns_queries:
+            if len(query) > max_query_length:
+                logging.warning(f"DNS query exceeds maximum length: {query}")
+                continue
+            query_counts[query] += 1
 
-            # Check for anomalies based on the threshold
-            if max(query_counts.values()) > threshold:
-                result['result'] = True
-                result['details'] = {'anomalous_queries': dict(query_counts)}
-                break
+        suspicious_queries = {query: count for query, count in query_counts.items() if count > threshold}
+        if suspicious_queries:
+            result['result'] = True
+            result['details'] = {'suspicious_queries': suspicious_queries}
+
+        # Check for DNS tunneling patterns
+        tunneling_pattern = re.compile(r'[a-zA-Z0-9_-]{10,}')
+        tunneling_queries = [query for query in dns_queries if tunneling_pattern.search(query)]
+        if tunneling_queries:
+            result['result'] = True
+            result['details']['tunneling_queries'] = tunneling_queries
 
     except Exception as e:
-        logging.error(f"Error executing DNS anomaly detector: {str(e)}")
-        result['status'] = 'failure'
-        result['details'] = {'error': str(e)}
+        logging.error(f"Error executing DNS anomaly detector: {e}")
+        result['status'] = 'error'
+        result['details']['error'] = str(e)
 
     return result

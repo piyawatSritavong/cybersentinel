@@ -12,33 +12,33 @@ def execute_log4j_detector(log_entries, http_headers):
     Returns:
         dict: Dictionary with 'status', 'result', and 'details' keys.
     """
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.INFO)
     result = {'status': 'success', 'result': False, 'details': []}
-
+    
     try:
         # Define the pattern for JNDI lookup strings
         pattern = r'\${jndi:(ldap|ldaps|dns|http|https)://[^}]+}'
-
+        
         # Analyze log entries
         for entry in log_entries:
             if re.search(pattern, entry):
                 result['result'] = True
-                result['details'].append(f"Log entry contains potential Log4j exploit: {entry}")
-
+                result['details'].append(f"Log entry: {entry} contains a potential Log4j exploitation pattern")
+        
         # Analyze HTTP headers
         for header, value in http_headers.items():
             if re.search(pattern, value):
                 result['result'] = True
-                result['details'].append(f"HTTP header '{header}' contains potential Log4j exploit: {value}")
-
+                result['details'].append(f"HTTP header '{header}': {value} contains a potential Log4j exploitation pattern")
+        
         if result['result']:
-            logging.warning("Potential Log4j exploit detected")
+            logging.warning("Potential Log4j exploitation pattern detected")
         else:
-            logging.info("No potential Log4j exploits detected")
-
+            logging.info("No potential Log4j exploitation patterns detected")
+    
     except Exception as e:
-        result['status'] = 'error'
+        result['status'] = 'failure'
         result['details'].append(f"An error occurred: {str(e)}")
         logging.error(f"An error occurred: {str(e)}")
-
+    
     return result
