@@ -1,44 +1,50 @@
 import logging
 import re
 from collections import defaultdict
-from typing import Dict, List
 
-def execute_dns_anomaly_detector(dns_queries: List[str], threshold: int = 5, max_query_length: int = 100) -> Dict:
+def execute_dns_anomaly_detector(dns_queries, threshold=100, window_size=60):
     """
     Detect DNS tunneling and exfiltration by analyzing DNS query patterns.
 
     Args:
-    - dns_queries (List[str]): A list of DNS queries to analyze.
-    - threshold (int): The minimum number of similar queries required to trigger an anomaly detection. Defaults to 5.
-    - max_query_length (int): The maximum length of a DNS query. Defaults to 100.
+        dns_queries (list): List of DNS query logs with timestamp and query details.
+        threshold (int): Threshold for detecting anomalies (default: 100).
+        window_size (int): Time window size in seconds for analyzing queries (default: 60).
 
     Returns:
-    - Dict: A dictionary containing the status, result, and details of the anomaly detection.
+        dict: Dictionary with 'status', 'result', and 'details' keys.
     """
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.INFO)
     result = {'status': 'success', 'result': False, 'details': {}}
 
     try:
-        query_lengths = defaultdict(int)
+        # Parse DNS queries and extract query names and timestamps
+        query_names = []
+        timestamps = []
         for query in dns_queries:
-            if len(query) > max_query_length:
-                logging.warning(f"DNS query exceeds maximum length: {query}")
-                continue
-            query_lengths[len(query)] += 1
+            query_name = re.search(r'query: (.+)', query).group(1)
+            timestamp = re.search(r'timestamp: (\d+)', query).group(1)
+            query_names.append(query_name)
+            timestamps.append(int(timestamp))
 
-        for length, count in query_lengths.items():
-            if count > threshold:
-                logging.info(f"Anomaly detected: {count} queries of length {length}")
+        # Analyze query patterns using a sliding window approach
+        query_counts = defaultdict(int)
+        for i in range(len(query_names)):
+            query_counts[query_names[i]] += 1
+            if i >= window_size:
+                query_counts[query_names[i - window_size]] -= 1
+                if query_counts[query_names[i - window_size]] == 0:
+                    del query_counts[query_names[i - window_size]]
+
+            # Check for anomalies based on the threshold
+            if max(query_counts.values()) > threshold:
                 result['result'] = True
-                result['details'] = {'query_length': length, 'count': count}
+                result['details'] = {'anomalous_queries': dict(query_counts)}
                 break
 
-        if not result['result']:
-            logging.info("No anomalies detected")
-
     except Exception as e:
-        logging.error(f"Error executing DNS anomaly detector: {e}")
-        result['status'] = 'error'
+        logging.error(f"Error executing DNS anomaly detector: {str(e)}")
+        result['status'] = 'failure'
         result['details'] = {'error': str(e)}
 
     return result

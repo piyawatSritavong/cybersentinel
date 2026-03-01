@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import pg from "pg";
 
 const SENTINEL_API = "http://localhost:8000";
 let _cachedApiKey: string | null = null;
@@ -261,6 +262,26 @@ export async function registerRoutes(
       const data = await proxyToSentinel("/v1/settings/onboarding");
       res.json(data);
     } catch {
+      try {
+        const dbUrl = process.env.DATABASE_URL;
+        if (dbUrl) {
+          const pool = new pg.Pool({ connectionString: dbUrl });
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS onboarding_state (
+              id SERIAL PRIMARY KEY,
+              completed BOOLEAN DEFAULT FALSE,
+              completed_at TIMESTAMP,
+              steps_completed TEXT[] DEFAULT '{}'
+            )
+          `);
+          const result = await pool.query("SELECT completed, steps_completed FROM onboarding_state ORDER BY id DESC LIMIT 1");
+          await pool.end();
+          if (result.rows.length > 0) {
+            res.json({ completed: result.rows[0].completed, steps_completed: result.rows[0].steps_completed || [] });
+            return;
+          }
+        }
+      } catch {}
       res.json({ completed: false, steps_completed: [] });
     }
   });
@@ -269,8 +290,29 @@ export async function registerRoutes(
     try {
       const data = await proxyToSentinel("/v1/settings/onboarding/complete", "POST", {});
       res.json(data);
-    } catch (err: any) {
-      res.json({ status: "error", message: err.message });
+    } catch {
+      try {
+        const dbUrl = process.env.DATABASE_URL;
+        if (dbUrl) {
+          const pool = new pg.Pool({ connectionString: dbUrl });
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS onboarding_state (
+              id SERIAL PRIMARY KEY,
+              completed BOOLEAN DEFAULT FALSE,
+              completed_at TIMESTAMP,
+              steps_completed TEXT[] DEFAULT '{}'
+            )
+          `);
+          await pool.query(
+            "INSERT INTO onboarding_state (completed, completed_at, steps_completed) VALUES (true, CURRENT_TIMESTAMP, $1)",
+            [["welcome", "ai_model", "integrations", "complete"]]
+          );
+          await pool.end();
+          res.json({ status: "completed" });
+          return;
+        }
+      } catch {}
+      res.json({ status: "error", message: "Backend unavailable and no database fallback" });
     }
   });
 

@@ -216,11 +216,21 @@ cybersentinel/app/
 - `Infra.get_config()` returns full provider status (exposed at `/v1/infra/status`)
 - Database: Replit Managed PostgreSQL (tables: `incidents`, `feedback`, `system_settings`, `onboarding_state`)
 
+## Setup Script (setup.sh)
+- Single-command entry point: `chmod +x setup.sh && ./setup.sh`
+- 6-step process: Environment Audit, Auto-Healing, Project Structure, Dependency Install, Database, Launch
+- Creates Python venv (`.venv/`) for PEP 668 isolation — no system pip pollution
+- Auto-detects package.json location (root or client/)
+- SQLite fallback if DATABASE_URL is missing
+- Concurrent launch: FastAPI backend (background, nohup) + npm frontend (foreground)
+- Trap handler for clean shutdown of background processes
+- No API key prompts — directs to Web UI onboarding
+
 ## Deployment Files
 - `docker-compose.yml` — Multi-container deployment (API + Dashboard)
 - `cybersentinel/Dockerfile` — Python FastAPI container
 - `Dockerfile.dashboard` — Node.js dashboard container
-- `setup.sh` — Auto-healing setup script (ASCII art, no API key prompts, directs to Web UI)
+- `setup.sh` — Single-command setup + concurrent launcher
 - `FINAL_RELEASE_REPORT.md` — Complete go-live documentation
 
 ## Test Suite
