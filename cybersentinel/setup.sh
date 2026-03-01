@@ -1,63 +1,59 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-echo "==========================================="
-echo "  CyberSentinel AI - One-Line Install"
-echo "  AI-Native Autonomous SOC System v3.0"
-echo "==========================================="
-echo ""
+# 1. แสดง ASCII Art (Branding)
+echo "=================================================="
+echo " 🛡️  CyberSentinel AI v1.0.0 - Auto-Installer"
+echo "=================================================="
 
-# 1. Check for Docker
-if ! command -v docker &> /dev/null; then
-    echo "[ERROR] Docker is not installed. Please install Docker first."
-    echo "  -> https://docs.docker.com/get-docker/"
+# 2. ตรวจสอบและ Clone (ถ้ายังไม่มี)
+REPO_DIR="cybersentinel"
+if [ ! -d "$REPO_DIR" ]; then
+    echo "[1/5] Cloning repository..."
+    git clone https://github.com/piyawatSritavong/cybersentinel.git "$REPO_DIR" --quiet
+fi
+cd "$REPO_DIR"
+
+# 3. ตรวจสอบ Dependencies (Node & Python)
+echo "[2/5] Checking System Dependencies..."
+check_cmd() { command -v "$1" >/dev/null 2>&1; }
+
+if ! check_cmd node || ! check_cmd python3; then
+    echo "  [ERROR] Node.js and Python3 are required."
     exit 1
 fi
-echo "[OK] Docker found."
 
-if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-    echo "[ERROR] docker-compose is not installed."
-    exit 1
-fi
-echo "[OK] Docker Compose found."
-
-# 2. Setup environment variables
-if [ ! -f .env ]; then
-    echo "[SETUP] Creating .env from .env.example..."
-    cp .env.example .env
-    echo "[ACTION REQUIRED] Please update the .env file with your actual keys:"
-    echo "  - GROQ_API_KEY"
-    echo "  - APP_API_KEY"
-    echo "  - DATABASE_URL"
-    echo "  - SECRET_VAULT_KEY"
-else
-    echo "[OK] .env file already exists."
+# 4. ติดตั้ง Backend (Python)
+echo "[3/5] Setting up AI Backend..."
+python3 -m venv venv --quiet
+source venv/bin/activate
+pip install -r requirements.txt --quiet
+# สร้างฐานข้อมูล SQLite เริ่มต้น (กรณีไม่มี DATABASE_URL เพื่อให้รันได้ทันที)
+if [ -z "${DATABASE_URL:-}" ]; then
+    export DATABASE_URL="sqlite:///./cybersentinel.db"
+    echo "  [INFO] Using local SQLite database for quick start."
 fi
 
-# 3. Create necessary directories for volume mounts
-echo "[SETUP] Creating data directories..."
-mkdir -p data/vector_db
-mkdir -p data/exports
-mkdir -p data/playbooks
+# 5. ติดตั้ง Frontend (Node.js) - แก้ไขปัญหาหาไฟล์ package.json ไม่เจอ
+echo "[4/5] Setting up Dashboard UI..."
+# สแกนหาตำแหน่ง package.json อัตโนมัติ (เผื่ออยู่ในโฟลเดอร์ client/)
+PKG_PATH=$(find . -name "package.json" -not -path "*/node_modules/*" | head -n 1)
+PKG_DIR=$(dirname "$PKG_PATH")
 
-# 4. Build and start containers
-echo ""
-echo "[DEPLOY] Building and starting CyberSentinel..."
-if command -v docker-compose &> /dev/null; then
-    docker-compose up -d --build
-else
-    docker compose up -d --build
-fi
+cd "$PKG_DIR"
+npm install --silent
+# Build โปรเจค (ถ้าเป็นโปรเจค Production) หรือเตรียมรัน Dev
+npm run build --if-present
+cd - > /dev/null
 
-echo ""
-echo "==========================================="
-echo "  CyberSentinel AI is now running!"
-echo "  API:    http://localhost:8000"
-echo "  Docs:   http://localhost:8000/docs"
-echo "  Health: http://localhost:8000/health"
-echo "==========================================="
-echo ""
-echo "Quick test:"
-echo '  curl -X POST http://localhost:8000/v1/ingest \'
-echo '    -H "X-API-KEY: YOUR_API_KEY" \'
-echo '    -H "Content-Type: application/json" \'
-echo '    -d '"'"'{"alert_id":"TEST-001","description":"Test","raw_data":"Failed login from 10.0.0.1","source":"splunk"}'"'"''
+# 6. Launching - รัน Backend และ Frontend พร้อมกัน
+echo "[5/5] Launching CyberSentinel..."
+echo "=================================================="
+echo " ✅ Setup Complete! System is starting..."
+echo " Dashboard: http://localhost:5173 (or 3000)"
+echo " API Docs:  http://localhost:8000/docs"
+echo "=================================================="
+
+# ใช้ 'concurrently' หรือรัน Background process เพื่อให้จบในคำสั่งเดียว
+(source venv/bin/activate && python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &)
+cd "$PKG_DIR" && npm run dev
