@@ -124,7 +124,7 @@ cybersentinel/app/
 - Subsequent loads skip onboarding and go to dashboard
 
 ## API Endpoints
-### Express Proxy Layer (port 5000)
+### Express Proxy Layer (port 5001)
 - GET  /api/sentinel/health        - System health (proxied to FastAPI)
 - GET  /api/sentinel/health/pro    - Production health (memory, queue, agents)
 - GET  /api/sentinel/stats         - Dashboard metrics

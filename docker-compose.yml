@@ -44,7 +44,7 @@ services:
     container_name: cybersentinel-dashboard
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "5001:5001"
     environment:
       - NODE_ENV=production
       - APP_API_KEY=${APP_API_KEY}
@@ -53,7 +53,7 @@ services:
       cybersentinel-api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:5000/api/sentinel/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://localhost:5001/api/sentinel/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3

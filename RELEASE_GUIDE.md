@@ -26,7 +26,7 @@ npm run dev
 
 CyberSentinel AI is a dual-layer platform with a plug-and-play modular architecture:
 
-- **Express Gateway** (port 5000): Serves the React Cyber Command Center and proxies API requests
+- **Express Gateway** (port 5001): Serves the React Cyber Command Center and proxies API requests
 - **FastAPI AI Core** (port 8000): Runs the autonomous SOC engine with Blue/Red/Purple agent squads
 - **Dynamic Settings**: PostgreSQL-backed configuration engine (no .env editing required)
 - **Provider Pattern**: Modular adapters for AI models, integrations, and social connectors
@@ -34,7 +34,7 @@ CyberSentinel AI is a dual-layer platform with a plug-and-play modular architect
 ```
                     Browser
                       |
-              Express Gateway (:5000)
+              Express Gateway (:5001)
              /        |        \
     React UI    REST API    WebSocket
                   |
@@ -196,7 +196,7 @@ services:
   cybersentinel:
     build: .
     ports:
-      - "5000:5000"
+      - "5001:5001"
       - "8000:8000"
     environment:
       - DATABASE_URL=${DATABASE_URL}

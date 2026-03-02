@@ -4,10 +4,21 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["cargo", "clipboard-jh", "gmp", "libffi", "libiconv", "libxcrypt", "openssl", "pkg-config", "rustc", "sqlite"]
+packages = [
+  "cargo",
+  "clipboard-jh",
+  "gmp",
+  "libffi",
+  "libiconv",
+  "libxcrypt",
+  "openssl",
+  "pkg-config",
+  "rustc",
+  "sqlite",
+]
 
 [[ports]]
-localPort = 5000
+localPort = 5001
 externalPort = 80
 
 [[ports]]
@@ -27,7 +38,7 @@ localPort = 8020
 externalPort = 3000
 
 [env]
-PORT = "5000"
+PORT = "5001"
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -53,7 +64,7 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
-waitForPort = 5000
+waitForPort = 5001
 
 [userenv]
 

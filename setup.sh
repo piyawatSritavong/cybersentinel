@@ -27,7 +27,7 @@ REPO_URL="${CYBERSENTINEL_REPO:-https://github.com/piyawatSritavong/cybersentine
 PROJECT_DIR="cybersentinel"
 VENV_DIR=".venv"
 BACKEND_PORT=8000
-FRONTEND_PORT=5000
+FRONTEND_PORT=5001
 BACKEND_LOG="backend.log"
 
 print_banner() {

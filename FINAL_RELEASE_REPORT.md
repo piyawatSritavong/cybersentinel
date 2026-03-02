@@ -27,7 +27,7 @@ npm run dev
 ```
 
 ### Step 3: Open the Dashboard
-Navigate to **http://localhost:5000** in your browser.
+Navigate to **http://localhost:5001** in your browser.
 
 You'll see the Sovereign Gateway dashboard with:
 - System health status
@@ -154,7 +154,7 @@ docker-compose up -d
 
 # Check health
 curl http://localhost:8000/health
-curl http://localhost:5000/api/sentinel/health
+curl http://localhost:5001/api/sentinel/health
 ```
 
 ---
@@ -167,7 +167,7 @@ curl http://localhost:5000/api/sentinel/health
 - In-memory queue with 1000-task capacity
 
 ### Medium Scale (100K–500K alerts/day)
-- Increase `MAX_QUEUE_SIZE=5000`
+- Increase `MAX_QUEUE_SIZE=5001`
 - Queue surge protection auto-scales workers up to 50
 - Consider external PostgreSQL for alert persistence
 
@@ -191,7 +191,7 @@ curl http://localhost:5000/api/sentinel/health
                 │ HTTP
 ┌───────────────▼─────────────────────────┐
 │          Express Proxy Layer            │
-│         (Port 5000, Node.js)            │
+│         (Port 5001, Node.js)            │
 │    Fallback storage + API routing       │
 └───────────────┬─────────────────────────┘
                 │ HTTP (X-API-KEY)
