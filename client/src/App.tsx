@@ -19,7 +19,7 @@ import NotFound from "@/pages/not-found";
 function OnboardingGate({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { data, isLoading } = useQuery<{ completed: boolean }>({
-    queryKey: ["/api/v1/settings/onboarding"],
+    queryKey: ["/v1/settings/onboarding"],
     staleTime: 0,
   });
 

@@ -69,7 +69,7 @@ export default function Onboarding() {
     mutationFn: async () => {
       const res = await apiRequest(
         "POST",
-        "/api/v1/settings/onboarding/complete",
+        "/v1/settings/onboarding/complete",
         {},
       );
       const data = await res.json();
@@ -81,7 +81,7 @@ export default function Onboarding() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/v1/settings/onboarding"],
+        queryKey: ["/v1/settings/onboarding"],
       });
 
       toast({
@@ -89,7 +89,7 @@ export default function Onboarding() {
         description: "Welcome to CyberSentinel!",
       });
 
-      setTimeout(() => setLocation("/dashboard"), 500);
+      setLocation("/dashboard");
     },
     onError: (err: Error) => {
       toast({
