@@ -29,6 +29,7 @@ VENV_DIR=".venv"
 BACKEND_PORT=8000
 FRONTEND_PORT=3000
 BACKEND_LOG="backend.log"
+FRONTEND_LOG="frontend.log"
 
 print_banner() {
 cat << 'EOF'
@@ -77,24 +78,33 @@ wait_for_port() {
   local timeout="${2:-30}"
   local elapsed=0
   while [ "$elapsed" -lt "$timeout" ]; do
-    (echo >/dev/tcp/127.0.0.1/"$port") 2>/dev/null && return 0
+    # ใช้ nc (netcat) แทน /dev/tcp เพื่อความชัวร์บน macOS
+    nc -z 127.0.0.1 "$port" >/dev/null 2>&1 && return 0
     sleep 1
     elapsed=$((elapsed + 1))
   done
   return 1
 }
 
+info "Cleaning up old processes..."
+lsof -ti:$BACKEND_PORT,$FRONTEND_PORT | xargs kill -9 2>/dev/null || true
+
 print_banner
 OS=$(detect_os)
 PKG=$(detect_pkg_manager "$OS")
 
 step 1 "Environment Audit"
-check_command python3 && ok "Python: $(python3 --version)" || fail "Python3 missing"
+if command -v pyenv &>/dev/null; then
+    pyenv local 3.10.13 2>/dev/null || warn "Python 3.10.13 not found in pyenv, using default."
+fi
+
+# เลือก Python ที่ถูกต้องก่อนทำ Audit
+PYTHON_CMD=$(command -v python3.10 || command -v python3 || command -v python)
+ok "Python: $($PYTHON_CMD --version)"
 check_command node && ok "Node.js: $(node --version)" || fail "Node.js missing"
 check_command npm && ok "npm: v$(npm --version)" || fail "npm missing"
 
 step 2 "Project Structure Setup"
-CWD="$(pwd)"
 if [ ! -d "$PROJECT_DIR" ] && [ ! -f "package.json" ]; then
     info "Cloning with --depth 1 for speed..."
     git clone --depth 1 "$REPO_URL" "$PROJECT_DIR"
@@ -117,16 +127,15 @@ NODE_STATUS="/tmp/node_install_$$.status"
 
 info "Installing Python and Node.js dependencies concurrently..."
 
-# --- Background Task: Python ---
+# --- Background Task: Python (ใช้ $PYTHON_CMD ที่เราเลือกไว้) ---
 (
   if [ ! -d "$VENV_PATH" ]; then
-    python3 -m venv "$VENV_PATH"
+    $PYTHON_CMD -m venv "$VENV_PATH"
   fi
   source "$VENV_PATH/bin/activate"
   pip install --upgrade pip --quiet --disable-pip-version-check
   if [ -f "$CYBERSENTINEL_DIR/requirements.txt" ]; then
-    # Optimization: Use quiet mode and skip version check
-    pip install -r "$CYBERSENTINEL_DIR/requirements.txt" --quiet --no-cache-dir 2>/dev/null
+    pip install -r "$CYBERSENTINEL_DIR/requirements.txt" --quiet --no-cache-dir
   fi
   touch "$PYTHON_STATUS"
 ) &
@@ -135,13 +144,11 @@ PY_PID=$!
 # --- Background Task: Node.js ---
 (
   cd "$NPM_DIR"
-  # Optimization: --prefer-offline and skip audits/funding notices
-  npm install --silent --no-audit --no-fund --prefer-offline 2>/dev/null
+  npm install --silent --no-audit --no-fund --prefer-offline
   touch "$NODE_STATUS"
 ) &
 NODE_PID=$!
 
-# Wait for both with a simple progress indicator
 while kill -0 $PY_PID 2>/dev/null || kill -0 $NODE_PID 2>/dev/null; do
     echo -ne "  ${CYAN}Processing dependencies...${NC}\r"
     sleep 1
@@ -153,27 +160,18 @@ rm -f "$PYTHON_STATUS" "$NODE_STATUS"
 
 step 4 "Database Fast-Setup"
 export DATABASE_URL=${DATABASE_URL:-"sqlite:///./cybersentinel.db"}
-if [ -z "${DATABASE_URL##*sqlite*}" ]; then
-    info "Using optimized SQLite fallback"
-else
-    ok "Using custom DATABASE_URL"
-fi
+mkdir -p cybersentinel/data
+ok "Database directory initialized."
 
 step 5 "Launch Strategy"
 source "$VENV_PATH/bin/activate"
 PYTHON_BIN="$VENV_PATH/bin/python"
 
 info "Starting Backend (Background)..."
-
-# [FIX 1] ตรวจสอบตำแหน่งโฟลเดอร์ให้ชัวร์ก่อนรัน
 if [ -d "$CYBERSENTINEL_DIR/app" ]; then
     cd "$CYBERSENTINEL_DIR"
-elif [ -d "$PROJECT_ROOT/app" ]; then
-    cd "$PROJECT_ROOT"
 fi
 
-# [FIX 2] เพิ่ม Time-out เป็น 60 วินาทีสำหรับเครื่องที่โหลดช้า
-# และเก็บ Error ไว้ดูใน backend.log
 nohup "$PYTHON_BIN" -m uvicorn app.main:app \
     --host 0.0.0.0 \
     --port "$BACKEND_PORT" \
@@ -184,20 +182,25 @@ BACKEND_PID=$!
 cd "$PROJECT_ROOT"
 info "Waiting for Backend to initialize (Max 60s)..."
 
-# [FIX 3] ปรับ wait_for_port ให้รอนานขึ้น
 if wait_for_port "$BACKEND_PORT" 60; then
     ok "Backend Live on port $BACKEND_PORT (PID: $BACKEND_PID)"
 else
-    warn "Backend is taking a while to respond."
-    info "Check error details in: cat $BACKEND_LOG"
+    fail "Backend failed to respond. Check $BACKEND_LOG"
 fi
 
 step 6 "Frontend Launch"
-echo -e "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${GREEN}${BOLD}  CyberSentinel AI v1.0.0 — READY${NC}"
-echo -e "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
-info "Dashboard: http://localhost:$FRONTEND_PORT"
-info "Starting Frontend (Foreground)...\n"
+info "Starting Frontend in background..."
+# รัน Frontend แบบ Background ทิ้งไว้
+nohup npm run dev -- --port "$FRONTEND_PORT" > "$FRONTEND_LOG" 2>&1 &
+FRONTEND_PID=$!
 
-cd "$NPM_DIR"
-npm run dev
+sleep 5
+echo -e "\n${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${GREEN}${BOLD}  CyberSentinel AI v1.0.0 — FULLY OPERATIONAL${NC}"
+echo -e "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+info "Dashboard: http://localhost:$FRONTEND_PORT"
+info "Backend API: http://localhost:$BACKEND_PORT"
+info "Backend Log: tail -f $BACKEND_LOG"
+info "Frontend Log: tail -f $FRONTEND_LOG"
+echo -e "\n${YELLOW}Note: All processes are now running in the background.${NC}"
+echo -e "${YELLOW}To stop them: lsof -ti:$BACKEND_PORT,$FRONTEND_PORT | xargs kill -9${NC}"
