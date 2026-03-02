@@ -91,7 +91,7 @@ export default function Onboarding() {
         description: "Welcome to CyberSentinel!",
       });
 
-      setLocation("/");
+      setLocation("/dashboard");
     },
     onError: (err: Error) => {
       toast({
