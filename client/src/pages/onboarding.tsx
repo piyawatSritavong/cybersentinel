@@ -67,12 +67,10 @@ export default function Onboarding() {
 
   const completeMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(
-        "http://localhost:8000/v1/settings/onboarding/complete",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        },
+      const res = await apiRequest(
+        "POST",
+        "/api/v1/settings/onboarding/complete",
+        {},
       );
       const data = await res.json();
 
@@ -83,7 +81,7 @@ export default function Onboarding() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/v1/settings/onboarding"],
+        queryKey: ["/api/v1/settings/onboarding"],
       });
 
       toast({
@@ -91,12 +89,12 @@ export default function Onboarding() {
         description: "Welcome to CyberSentinel!",
       });
 
-      setLocation("/dashboard");
+      setTimeout(() => setLocation("/dashboard"), 500);
     },
     onError: (err: Error) => {
       toast({
         title: "Setup Failed",
-        description: err.message,
+        description: "API Error: " + err.message,
         variant: "destructive",
       });
     },

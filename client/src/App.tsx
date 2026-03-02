@@ -19,19 +19,19 @@ import NotFound from "@/pages/not-found";
 function OnboardingGate({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { data, isLoading } = useQuery<{ completed: boolean }>({
-    queryKey: ["/v1/settings/onboarding"],
+    queryKey: ["/api/v1/settings/onboarding"],
     staleTime: 0,
   });
 
   if (isLoading) return null;
 
-  // ถ้ายังไม่เสร็จ และไม่ได้อยู่ที่หน้า onboarding ให้เด้งไปหน้า onboarding
-  if (!data?.completed && location !== "/onboarding") {
+  const isDone = data?.completed === true || String(data?.completed) === "true";
+
+  if (!isDone && location !== "/onboarding") {
     return <Redirect to="/onboarding" />;
   }
 
-  // เพิ่มเงื่อนไข: ถ้าเสร็จแล้ว แต่อยู่หน้า onboarding ให้เด้งไปหน้า Dashboard
-  if (data?.completed && location === "/onboarding") {
+  if (isDone && location === "/onboarding") {
     return <Redirect to="/dashboard" />;
   }
 
