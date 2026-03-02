@@ -204,3 +204,4 @@ info "Backend Log: tail -f $BACKEND_LOG"
 info "Frontend Log: tail -f $FRONTEND_LOG"
 echo -e "\n${YELLOW}Note: All processes are now running in the background.${NC}"
 echo -e "${YELLOW}To stop them: lsof -ti:$BACKEND_PORT,$FRONTEND_PORT | xargs kill -9${NC}"
+trap - EXIT
