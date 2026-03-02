@@ -18,7 +18,7 @@ packages = [
 ]
 
 [[ports]]
-localPort = 5001
+localPort = 3000
 externalPort = 80
 
 [[ports]]
@@ -38,7 +38,7 @@ localPort = 8020
 externalPort = 3000
 
 [env]
-PORT = "5001"
+PORT = "3000"
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -64,7 +64,7 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
-waitForPort = 5001
+waitForPort = 3000
 
 [userenv]
 
