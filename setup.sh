@@ -32,15 +32,15 @@ BACKEND_LOG="backend.log"
 
 print_banner() {
 cat << 'EOF'
-    ██████╗██╗   ██╗██████╗ ███████╗██████╗ ███████╗███████╗███╗   ██╗████████╗██╗███╗   ██╗███████╗██╗
-   ██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗██╔════╝██╔════╝████╗  ██║╚══██╔══╝██║████╗  ██║██╔════╝██║
-   ██║     ╚████╔╝ ██████╔╝█████╗  ██████╔╝███████╗█████╗  ██╔██╗ ██║   ██║   ██║██╔██╗ ██║█████╗  ██║
-   ██║      ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗╚════██║██╔══╝  ██║╚██╗██║   ██║   ██║██║╚██╗██║██╔══╝  ██║
-   ╚██████╗   ██║   ██████╔╝███████╗██║  ██║███████║███████╗██║ ╚████║   ██║   ██║██║ ╚████║███████╗███████╗
-    ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝
+   ██████╗██╗   ██╗██████╗ ███████╗██████╗ ███████╗███████╗███╗   ██╗████████╗██╗███╗   ██╗███████╗██╗
+  ██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗██╔════╝██╔════╝████╗  ██║╚══██╔══╝██║████╗  ██║██╔════╝██║
+  ██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝███████╗█████╗  ██╔██╗ ██║   ██║   ██║██╔██╗ ██║█████╗  ██║
+  ██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗╚════██║██╔══╝  ██║╚██╗██║   ██║   ██║██║╚██╗██║██╔══╝  ██║
+  ╚██████╗   ██║   ██████╔╝███████╗██║  ██║███████║███████╗██║ ╚████║   ██║   ██║██║ ╚████║███████╗███████╗
+   ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝
 EOF
 echo -e "  ${MAGENTA}${BOLD}AI-Native Autonomous SOC Platform v1.0.0${NC}"
-echo -e "  ${DIM}Single-Command Turbo Setup & Launch${NC}"
+echo -e "  ${DIM}Single-Command Setup & Launch${NC}"
 echo ""
 }
 
@@ -164,13 +164,33 @@ source "$VENV_PATH/bin/activate"
 PYTHON_BIN="$VENV_PATH/bin/python"
 
 info "Starting Backend (Background)..."
-cd "$CYBERSENTINEL_DIR"
-nohup "$PYTHON_BIN" -m uvicorn app.main:app --host 0.0.0.0 --port "$BACKEND_PORT" > "$PROJECT_ROOT/$BACKEND_LOG" 2>&1 &
+
+# [FIX 1] ตรวจสอบตำแหน่งโฟลเดอร์ให้ชัวร์ก่อนรัน
+if [ -d "$CYBERSENTINEL_DIR/app" ]; then
+    cd "$CYBERSENTINEL_DIR"
+elif [ -d "$PROJECT_ROOT/app" ]; then
+    cd "$PROJECT_ROOT"
+fi
+
+# [FIX 2] เพิ่ม Time-out เป็น 60 วินาทีสำหรับเครื่องที่โหลดช้า
+# และเก็บ Error ไว้ดูใน backend.log
+nohup "$PYTHON_BIN" -m uvicorn app.main:app \
+    --host 0.0.0.0 \
+    --port "$BACKEND_PORT" \
+    --log-level info \
+    > "$PROJECT_ROOT/$BACKEND_LOG" 2>&1 &
 BACKEND_PID=$!
 
 cd "$PROJECT_ROOT"
-info "Waiting for Backend to initialize..."
-wait_for_port "$BACKEND_PORT" 15 && ok "Backend Live" || warn "Backend taking longer than expected"
+info "Waiting for Backend to initialize (Max 60s)..."
+
+# [FIX 3] ปรับ wait_for_port ให้รอนานขึ้น
+if wait_for_port "$BACKEND_PORT" 60; then
+    ok "Backend Live on port $BACKEND_PORT (PID: $BACKEND_PID)"
+else
+    warn "Backend is taking a while to respond."
+    info "Check error details in: cat $BACKEND_LOG"
+fi
 
 step 6 "Frontend Launch"
 echo -e "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
