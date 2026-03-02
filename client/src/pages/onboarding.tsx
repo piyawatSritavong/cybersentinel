@@ -41,7 +41,7 @@ export default function Onboarding() {
 
   const saveKeyMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/settings", {
+      const res = await apiRequest("POST", "/v1/settings", {
         category: "ai_models",
         key: "groq_api_key",
         value: groqKey,
@@ -54,7 +54,7 @@ export default function Onboarding() {
         title: "API Key Saved",
         description: "Groq API key configured successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/providers/models"] });
+      queryClient.invalidateQueries({ queryKey: ["/v1/providers/models"] });
     },
     onError: (err: Error) => {
       toast({

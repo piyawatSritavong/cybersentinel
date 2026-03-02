@@ -19,8 +19,8 @@ import NotFound from "@/pages/not-found";
 function OnboardingGate({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { data, isLoading } = useQuery<{ completed: boolean }>({
-    // แก้ไขบรรทัดนี้ให้มี /v1/ เพื่อให้ตรงกับที่ API คุยกัน
     queryKey: ["/v1/settings/onboarding"],
+    staleTime: 0,
   });
 
   if (isLoading) return null;
