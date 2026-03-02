@@ -58,10 +58,9 @@ logger = logging.getLogger(__name__)
 
 _start_time = time.time()
 
-app = FastAPI(
-    title="CyberSentinel AI - Autonomous Agentic SOC",
-    description="AI-Native Self-Learning Security Operations Center",
-    version="1.0.0")
+app = FastAPI(title="CyberSentinel AI - Autonomous Agentic SOC",
+              description="AI-Native Self-Learning Security Operations Center",
+              version="1.0.0")
 
 
 class AlertWebhook(BaseModel):
@@ -136,7 +135,8 @@ async def startup_event():
         ds.seed_from_env()
         logger.info("[STARTUP] Dynamic settings loaded from PostgreSQL")
     else:
-        logger.warning("[STARTUP] Dynamic settings DB unavailable, using env fallback")
+        logger.warning(
+            "[STARTUP] Dynamic settings DB unavailable, using env fallback")
 
     init_chromadb()
     logger.info("[STARTUP] ChromaDB initialized with playbooks")
@@ -176,7 +176,9 @@ async def startup_event():
         start_results = await multi_channel_gateway.start_all()
         logger.info(f"[STARTUP] Social gateways started: {start_results}")
     else:
-        logger.info("[STARTUP] Social gateway disabled (set ENABLE_SOCIAL_GATEWAY=true to enable)")
+        logger.info(
+            "[STARTUP] Social gateway disabled (set ENABLE_SOCIAL_GATEWAY=true to enable)"
+        )
 
     logger.info("[STARTUP] CyberSentinel AI v1.0.0 ready.")
 
@@ -195,11 +197,9 @@ async def _process_alert(webhook: AlertWebhook) -> Dict[str, Any]:
     tenant = TenantContext(user_id=webhook.user_id, org_id=webhook.org_id)
     masked_log = mask_pii(webhook.raw_data)
 
-    state = AgentState(
-        alert_id=webhook.alert_id,
-        masked_log=masked_log,
-        source=webhook.source or "splunk"
-    )
+    state = AgentState(alert_id=webhook.alert_id,
+                       masked_log=masked_log,
+                       source=webhook.source or "splunk")
 
     final_state = await supervisor.run(state, tenant)
 
@@ -208,36 +208,48 @@ async def _process_alert(webhook: AlertWebhook) -> Dict[str, Any]:
         risk_level = "Low"
 
     try:
-        memory.save_incident(
-            raw_log=masked_log,
-            analysis={
-                "alert_id": webhook.alert_id,
-                "risk_level": risk_level,
-                "category": "General",
-                "summary": final_state.remediation[:200] if final_state.remediation else "Analyzed",
-                "source_type": webhook.source
-            },
-            tenant=tenant
-        )
+        memory.save_incident(raw_log=masked_log,
+                             analysis={
+                                 "alert_id":
+                                 webhook.alert_id,
+                                 "risk_level":
+                                 risk_level,
+                                 "category":
+                                 "General",
+                                 "summary":
+                                 final_state.remediation[:200]
+                                 if final_state.remediation else "Analyzed",
+                                 "source_type":
+                                 webhook.source
+                             },
+                             tenant=tenant)
     except Exception as db_err:
         logger.error(f"Database save failed: {db_err}")
 
-    plugin_loader.notify_all("alert_analyzed", {
-        "alert_id": webhook.alert_id,
-        "verdict": final_state.verdict,
-        "risk_level": risk_level
-    })
+    plugin_loader.notify_all(
+        "alert_analyzed", {
+            "alert_id": webhook.alert_id,
+            "verdict": final_state.verdict,
+            "risk_level": risk_level
+        })
 
-    if risk_level in ("High", "Critical") or (webhook.risk_score and webhook.risk_score > 75):
+    if risk_level in ("High", "Critical") or (webhook.risk_score
+                                              and webhook.risk_score > 75):
         try:
             await multi_channel_gateway.broadcast_alert({
-                "title": f"Alert {webhook.alert_id}",
-                "severity": risk_level.lower(),
-                "description": webhook.description,
-                "source": webhook.source,
-                "timestamp": webhook.timestamp or time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "title":
+                f"Alert {webhook.alert_id}",
+                "severity":
+                risk_level.lower(),
+                "description":
+                webhook.description,
+                "source":
+                webhook.source,
+                "timestamp":
+                webhook.timestamp or time.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "iocs": [],
-                "recommended_actions": [final_state.remediation[:200]] if final_state.remediation else [],
+                "recommended_actions": [final_state.remediation[:200]]
+                if final_state.remediation else [],
             })
         except Exception as gw_err:
             logger.error(f"Gateway broadcast failed: {gw_err}")
@@ -271,7 +283,9 @@ async def ingest_alert(webhook: AlertWebhook):
                     alert_id=webhook.alert_id,
                     task_id="duplicate",
                     status="skipped",
-                    message="Identical attack pattern detected. Skipping to prevent DB spam.")
+                    message=
+                    "Identical attack pattern detected. Skipping to prevent DB spam."
+                )
 
         task_id = await task_queue.enqueue(_process_alert(webhook))
 
@@ -279,7 +293,8 @@ async def ingest_alert(webhook: AlertWebhook):
             alert_id=webhook.alert_id,
             task_id=task_id,
             status="queued",
-            message="Alert queued for analysis. Poll /v1/task/{task_id} for results.")
+            message=
+            "Alert queued for analysis. Poll /v1/task/{task_id} for results.")
 
     except Exception as e:
         logger.error(f"Ingest error: {str(e)}")
@@ -294,12 +309,10 @@ async def get_task_status(task_id: str):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    return TaskStatusResponse(
-        task_id=task.task_id,
-        status=task.status.value,
-        result=task.result,
-        error=task.error
-    )
+    return TaskStatusResponse(task_id=task.task_id,
+                              status=task.status.value,
+                              result=task.result,
+                              error=task.error)
 
 
 @app.post("/analyze",
@@ -326,16 +339,15 @@ async def analyze_alert(webhook: AlertWebhook):
             "correlation": result.get("correlation", "")
         }
 
-        executive_report = generate_executive_report(
-            verdict=result["verdict"],
-            alert_data=alert_data,
-            reasoning=reasoning)
+        executive_report = generate_executive_report(verdict=result["verdict"],
+                                                     alert_data=alert_data,
+                                                     reasoning=reasoning)
 
-        technical_report = generate_technical_report(
-            verdict=result["verdict"],
-            alert_data=alert_data,
-            reasoning=reasoning,
-            playbook_refs=result.get("playbook_refs", []))
+        technical_report = generate_technical_report(verdict=result["verdict"],
+                                                     alert_data=alert_data,
+                                                     reasoning=reasoning,
+                                                     playbook_refs=result.get(
+                                                         "playbook_refs", []))
 
         report_payload = {
             "alert_id": webhook.alert_id,
@@ -348,19 +360,19 @@ async def analyze_alert(webhook: AlertWebhook):
 
         ticketing_result = ticketing_manager.dispatch_ticket(report_payload)
 
-        return AnalyzeResponse(
-            alert_id=webhook.alert_id,
-            verdict=result["verdict"],
-            masked_log=result["masked_log"],
-            analyst_report=result.get("analyst_report", ""),
-            skeptic_report=result.get("skeptic_report", ""),
-            judge_reasoning=result.get("judge_reasoning", ""),
-            remediation=result.get("remediation", ""),
-            correlation=result.get("correlation", ""),
-            playbook_refs=result.get("playbook_refs", []),
-            executive_report=executive_report,
-            technical_report=technical_report,
-            ticketing_result=ticketing_result)
+        return AnalyzeResponse(alert_id=webhook.alert_id,
+                               verdict=result["verdict"],
+                               masked_log=result["masked_log"],
+                               analyst_report=result.get("analyst_report", ""),
+                               skeptic_report=result.get("skeptic_report", ""),
+                               judge_reasoning=result.get(
+                                   "judge_reasoning", ""),
+                               remediation=result.get("remediation", ""),
+                               correlation=result.get("correlation", ""),
+                               playbook_refs=result.get("playbook_refs", []),
+                               executive_report=executive_report,
+                               technical_report=technical_report,
+                               ticketing_result=ticketing_result)
 
     except Exception as e:
         logger.error(f"Error processing alert: {str(e)}")
@@ -370,13 +382,15 @@ async def analyze_alert(webhook: AlertWebhook):
 @app.post("/confirm-verdict", dependencies=[Depends(get_api_key)])
 async def confirm_verdict(feedback: FeedbackWebhook):
     try:
-        memory.add_to_memory(
-            alert_id=feedback.alert_id,
-            raw_log=feedback.raw_log,
-            verdict=feedback.verdict,
-            is_correct=feedback.is_correct,
-            reason=feedback.reason)
-        return {"status": "success", "message": "Feedback integrated into memory."}
+        memory.add_to_memory(alert_id=feedback.alert_id,
+                             raw_log=feedback.raw_log,
+                             verdict=feedback.verdict,
+                             is_correct=feedback.is_correct,
+                             reason=feedback.reason)
+        return {
+            "status": "success",
+            "message": "Feedback integrated into memory."
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -400,7 +414,10 @@ async def upload_knowledge(file: UploadFile = File(...),
         memory.add_document(doc_id=doc_id,
                             text=content,
                             metadata={"filename": file.filename})
-        return {"status": "success", "message": f"Document {file.filename} added to knowledge base."}
+        return {
+            "status": "success",
+            "message": f"Document {file.filename} added to knowledge base."
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -413,18 +430,33 @@ async def vault_audit():
 @app.get("/health")
 async def health_check():
     return {
-        "status": "healthy",
-        "version": "1.0.0",
-        "architecture": "AI-Native Agentic",
-        "chromadb": "connected",
-        "groq": "configured",
-        "ticketing_plugin": ticketing_manager.plugin_type if ticketing_manager else "uninitialized",
-        "agents": ["analyst", "skeptic", "judge", "blue_team", "red_team", "purple_team"],
-        "tools": list(supervisor.tools.keys()),
-        "plugins": plugin_loader.get_loaded(),
-        "learning_mode": memory.enabled,
-        "queue_workers": task_queue._max_workers,
-        "gateways": multi_channel_gateway.get_status(),
+        "status":
+        "healthy",
+        "version":
+        "1.0.0",
+        "architecture":
+        "AI-Native Agentic",
+        "chromadb":
+        "connected",
+        "groq":
+        "configured",
+        "ticketing_plugin":
+        ticketing_manager.plugin_type
+        if ticketing_manager else "uninitialized",
+        "agents": [
+            "analyst", "skeptic", "judge", "blue_team", "red_team",
+            "purple_team"
+        ],
+        "tools":
+        list(supervisor.tools.keys()),
+        "plugins":
+        plugin_loader.get_loaded(),
+        "learning_mode":
+        memory.enabled,
+        "queue_workers":
+        task_queue._max_workers,
+        "gateways":
+        multi_channel_gateway.get_status(),
     }
 
 
@@ -473,8 +505,10 @@ async def health_pro():
             "groq": groq_cb.get_status(),
         },
         "scheduler": {
-            "active_jobs": len([j for j in scheduler.list_jobs() if j.get("enabled")]),
-            "total_jobs": len(scheduler.list_jobs()),
+            "active_jobs":
+            len([j for j in scheduler.list_jobs() if j.get("enabled")]),
+            "total_jobs":
+            len(scheduler.list_jobs()),
         },
         "skills": {
             "loaded": len(skill_engine.list_skills()),
@@ -499,8 +533,10 @@ async def test_gateway(data: Dict[str, Any] = {}):
     if not gw:
         available = [g["name"] for g in multi_channel_gateway.list_gateways()]
         return {
-            "success": False,
-            "error": f"Gateway '{gateway_name}' not registered. Available: {available}"
+            "success":
+            False,
+            "error":
+            f"Gateway '{gateway_name}' not registered. Available: {available}"
         }
 
     try:
@@ -513,11 +549,7 @@ async def test_gateway(data: Dict[str, Any] = {}):
             "status": gw.get_status()
         }
     except Exception as e:
-        return {
-            "success": False,
-            "gateway": gateway_name,
-            "error": str(e)
-        }
+        return {"success": False, "gateway": gateway_name, "error": str(e)}
 
 
 class AgentRunRequest(BaseModel):
@@ -547,7 +579,8 @@ async def run_agent_squad(req: AgentRunRequest):
 
     handler = squad_map.get(req.squad)
     if not handler:
-        raise HTTPException(status_code=400, detail=f"Unknown squad: {req.squad}")
+        raise HTTPException(status_code=400,
+                            detail=f"Unknown squad: {req.squad}")
 
     raw = handler(req.task)
     if isinstance(raw, dict):
@@ -584,7 +617,8 @@ async def list_cron_jobs():
 async def create_cron_job(req: CronJobRequest):
     import uuid
     job_id = f"cron-{str(uuid.uuid4())[:8]}"
-    job = scheduler.add_job(job_id, req.name, req.schedule, req.squad, req.task)
+    job = scheduler.add_job(job_id, req.name, req.schedule, req.squad,
+                            req.task)
     return job.to_dict()
 
 
@@ -620,7 +654,9 @@ async def get_settings():
 @app.post("/v1/settings", dependencies=[Depends(get_api_key)])
 async def update_setting(req: SettingUpdateRequest):
     ds = get_dynamic_settings()
-    ds.set(req.category, req.key, req.value,
+    ds.set(req.category,
+           req.key,
+           req.value,
            encrypted=req.encrypted or False,
            description=req.description or "")
     if req.enabled is not None:
@@ -632,18 +668,29 @@ async def update_setting(req: SettingUpdateRequest):
 @app.get("/v1/settings/onboarding")
 async def get_onboarding():
     ds = get_dynamic_settings()
-    if not ds._db_available:
-        return {"completed": False, "steps_completed": []}
+    # ถ้าหา DATABASE_URL ไม่เจอ ให้ถือว่าใช้ sqlite เป็น default
+    db_url = os.environ.get("DATABASE_URL", "sqlite:///./cybersentinel.db")
+
     try:
         from sqlalchemy import create_engine, text
-        db_url = os.environ.get("DATABASE_URL", "")
-        if not db_url:
-            return {"completed": False, "steps_completed": []}
         engine = create_engine(db_url)
         with engine.connect() as conn:
-            row = conn.execute(text("SELECT completed, steps_completed FROM onboarding_state ORDER BY id DESC LIMIT 1")).fetchone()
-            if row:
-                return {"completed": row[0], "steps_completed": row[1] or []}
+            # เพิ่มการรองรับกรณีตารางยังไม่มี ให้ส่ง False ไปก่อน
+            try:
+                row = conn.execute(
+                    text(
+                        "SELECT completed, steps_completed FROM onboarding_state ORDER BY id DESC LIMIT 1"
+                    )).fetchone()
+                if row:
+                    # แปลงค่าจาก String กลับเป็น List (สำหรับ SQLite)
+                    steps = row[1].split(',') if isinstance(
+                        row[1], str) else (row[1] or [])
+                    return {
+                        "completed": bool(row[0]),
+                        "steps_completed": steps
+                    }
+            except Exception:
+                return {"completed": False, "steps_completed": []}
             return {"completed": False, "steps_completed": []}
     except Exception:
         return {"completed": False, "steps_completed": []}
@@ -651,20 +698,33 @@ async def get_onboarding():
 
 @app.post("/v1/settings/onboarding/complete")
 async def complete_onboarding():
+    db_url = os.environ.get("DATABASE_URL", "sqlite:///./cybersentinel.db")
     try:
         from sqlalchemy import create_engine, text
-        db_url = os.environ.get("DATABASE_URL", "")
-        if not db_url:
-            return {"status": "error", "message": "Database not available"}
         engine = create_engine(db_url)
-        with engine.connect() as conn:
-            conn.execute(text(
-                "INSERT INTO onboarding_state (completed, completed_at, steps_completed) "
-                "VALUES (true, CURRENT_TIMESTAMP, ARRAY['welcome','ai_model','integrations','complete'])"
-            ))
-            conn.commit()
+        with engine.begin() as conn:  # ใช้ begin() เพื่อให้ Auto-commit
+            # 1. สร้าง Table ถ้ายังไม่มี (กันเหนียวสำหรับ SQLite)
+            conn.execute(
+                text("""
+                CREATE TABLE IF NOT EXISTS onboarding_state (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    completed BOOLEAN,
+                    completed_at TIMESTAMP,
+                    steps_completed TEXT
+                )
+            """))
+
+            # 2. Insert ข้อมูล (ใช้ String แทน ARRAY สำหรับ SQLite)
+            steps_str = "welcome,ai_model,integrations,complete"
+            conn.execute(
+                text(
+                    "INSERT INTO onboarding_state (completed, completed_at, steps_completed) "
+                    "VALUES (1, CURRENT_TIMESTAMP, :steps)"),
+                {"steps": steps_str})
+
         return {"status": "completed"}
     except Exception as e:
+        logger.error(f"Onboarding complete error: {str(e)}")
         return {"status": "error", "message": str(e)}
 
 
@@ -678,7 +738,8 @@ async def get_integrations():
     return integration_hub.list_all()
 
 
-@app.post("/v1/providers/integrations/test", dependencies=[Depends(get_api_key)])
+@app.post("/v1/providers/integrations/test",
+          dependencies=[Depends(get_api_key)])
 async def test_integration(data: Dict[str, Any] = {}):
     name = data.get("name", "")
     result = integration_hub.test_integration(name)
@@ -695,9 +756,15 @@ async def rotate_api_key():
     import secrets
     new_key = secrets.token_urlsafe(32)
     ds = get_dynamic_settings()
-    ds.set("security", "app_api_key", new_key, encrypted=True,
+    ds.set("security",
+           "app_api_key",
+           new_key,
+           encrypted=True,
            description="Application API key")
-    return {"status": "rotated", "message": "New API key generated. Update your clients."}
+    return {
+        "status": "rotated",
+        "message": "New API key generated. Update your clients."
+    }
 
 
 if __name__ == "__main__":
