@@ -83,7 +83,7 @@ export default function Onboarding() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/v1/settings/onboarding"],
+        queryKey: ["/v1/settings/onboarding"],
       });
 
       toast({
@@ -91,7 +91,7 @@ export default function Onboarding() {
         description: "Welcome to CyberSentinel!",
       });
 
-      setTimeout(() => setLocation("/"), 500);
+      setLocation("/");
     },
     onError: (err: Error) => {
       toast({
