@@ -32,7 +32,7 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
 
   // เพิ่มเงื่อนไข: ถ้าเสร็จแล้ว แต่อยู่หน้า onboarding ให้เด้งไปหน้า Dashboard
   if (data?.completed && location === "/onboarding") {
-    return <Redirect to="/" />;
+    return <Redirect to="/dashboard" />;
   }
 
   return <>{children}</>;
@@ -47,7 +47,7 @@ function Router() {
           {() => (
             <Layout>
               <Switch>
-                <Route path="/" component={Dashboard} />
+                <Route path="/dashboard" component={Dashboard} />
                 <Route path="/alerts" component={AlertFeed} />
                 <Route path="/agents" component={AgentSquads} />
                 <Route path="/skills" component={Skills} />
