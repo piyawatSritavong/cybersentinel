@@ -67,9 +67,12 @@ export default function Onboarding() {
 
   const completeMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest(
-        "POST",
-        "/api/v1/settings/onboarding/complete",
+      const res = await fetch(
+        "http://localhost:8000/v1/settings/onboarding/complete",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        },
       );
       const data = await res.json();
 

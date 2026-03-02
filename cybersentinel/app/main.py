@@ -50,6 +50,8 @@ from app.providers.model_provider import list_providers, get_model_provider
 from app.providers.integration_hub import IntegrationHub
 from app.providers.social_connector import list_social_connectors
 
+from fastapi.middleware.cors import CORSMiddleware
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -61,6 +63,14 @@ _start_time = time.time()
 app = FastAPI(title="CyberSentinel AI - Autonomous Agentic SOC",
               description="AI-Native Self-Learning Security Operations Center",
               version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class AlertWebhook(BaseModel):
@@ -667,33 +677,33 @@ async def update_setting(req: SettingUpdateRequest):
 
 @app.get("/v1/settings/onboarding")
 async def get_onboarding():
-    ds = get_dynamic_settings()
-    # ถ้าหา DATABASE_URL ไม่เจอ ให้ถือว่าใช้ sqlite เป็น default
     db_url = os.environ.get("DATABASE_URL", "sqlite:///./cybersentinel.db")
-
     try:
         from sqlalchemy import create_engine, text
         engine = create_engine(db_url)
         with engine.connect() as conn:
-            # เพิ่มการรองรับกรณีตารางยังไม่มี ให้ส่ง False ไปก่อน
+            # ใช้ try-except ครอบเฉพาะส่วน query เผื่อไม่มี Table
             try:
-                row = conn.execute(
+                result = conn.execute(
                     text(
                         "SELECT completed, steps_completed FROM onboarding_state ORDER BY id DESC LIMIT 1"
                     )).fetchone()
-                if row:
-                    # แปลงค่าจาก String กลับเป็น List (สำหรับ SQLite)
-                    steps = row[1].split(',') if isinstance(
-                        row[1], str) else (row[1] or [])
+
+                if result:
+                    # ตรวจสอบประเภทข้อมูลก่อน split
+                    steps = result[1]
+                    if isinstance(steps, str):
+                        steps = steps.split(',')
                     return {
-                        "completed": bool(row[0]),
-                        "steps_completed": steps
+                        "completed": bool(result[0]),
+                        "steps_completed": steps or []
                     }
-            except Exception:
-                return {"completed": False, "steps_completed": []}
-            return {"completed": False, "steps_completed": []}
-    except Exception:
-        return {"completed": False, "steps_completed": []}
+            except Exception as e:
+                logger.debug(f"Onboarding table might not exist yet: {e}")
+    except Exception as e:
+        logger.error(f"Onboarding fetch error: {e}")
+
+    return {"completed": False, "steps_completed": []}
 
 
 @app.post("/v1/settings/onboarding/complete")
